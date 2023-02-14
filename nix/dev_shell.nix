@@ -1,11 +1,9 @@
-{ mkShell, rust, rust-analyzer, cargo2nix, nixpkgs-fmt }:
+{ mkShell, helix, rust, rust-analyzer, cargo2nix, nixpkgs-fmt }:
 
 let
   rustWithExtensions = rust.override {
     extensions = [
-      "rustfmt-preview"
       "rust-src"
-      "rls-preview"
     ];
   };
 in
@@ -18,5 +16,6 @@ mkShell {
     rustWithExtensions
     rust-analyzer
     nixpkgs-fmt
+    helix
   ];
 }

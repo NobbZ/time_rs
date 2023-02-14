@@ -4,7 +4,7 @@ use clap::Args;
 
 use super::Command;
 
-#[derive(Debug, Args)]
+#[derive(Debug, PartialEq, Eq, Args)]
 pub struct Stop {}
 
 impl Command for Stop {

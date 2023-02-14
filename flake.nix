@@ -28,6 +28,6 @@
           inherit (cargo2nix.packages.x86_64-linux) cargo2nix;
         };
 
-        packages.x86_64-linux.default = (rustPkgs.workspace.time_rs {}).bin;
+        packages.x86_64-linux.default = (rustPkgs.workspace.time_rs {});
       };
 }
