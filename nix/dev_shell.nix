@@ -1,4 +1,4 @@
-{ mkShell, rust, nixpkgs-fmt }:
+{ mkShell, rust, rust-analyzer, cargo2nix, nixpkgs-fmt }:
 
 let
   rustWithExtensions = rust.override {
@@ -6,7 +6,6 @@ let
       "rustfmt-preview"
       "rust-src"
       "rls-preview"
-      "rust-analysis"
     ];
   };
 in
@@ -15,7 +14,9 @@ mkShell {
   version = "0.0.0";
 
   packages = [
+    cargo2nix
     rustWithExtensions
+    rust-analyzer
     nixpkgs-fmt
   ];
 }
