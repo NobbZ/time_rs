@@ -11,6 +11,9 @@ jobs:
   build-test-artifacts:
     name: Build test artifacts
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain: ["1.67.0", "nightly-2023-02-01", "nightly-2023-01-01"]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -19,7 +22,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.toolchain }}
           override: true
       - name: Install nextest
         uses: taiki-e/install-action@nextest
@@ -28,7 +31,7 @@ jobs:
       - name: Upload archive to workflow
         uses: actions/upload-artifact@v3
         with:
-          name: nextest-archive
+          name: nextest-archive-${{ matrix.toolchain }}
           path: nextest-archive.tar.zst
 
   run-tests-partitioned:
@@ -37,6 +40,7 @@ jobs:
     needs: build-test-artifacts
     strategy:
       matrix:
+        toolchain: ["1.67.0", "nightly-2023-02-01", "nightly-2023-01-01"]
         partition: [1, 2, 3, 4]
     steps:
       # The source directory must be checked out.
@@ -54,7 +58,7 @@ jobs:
       - name: Download archive
         uses: actions/download-artifact@v3
         with:
-          name: nextest-archive
+          name: nextest-archive-${{ matrix.toolchain }}
       - name: Run tests
         run: |
           ~/.cargo/bin/cargo-nextest nextest run --archive-file nextest-archive.tar.zst \
