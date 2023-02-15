@@ -27,4 +27,3 @@ repos:
         files: ".*\\.nix$"
         exclude: "^Cargo.nix$"
         entry: nix fmt -- --check
-        always_run: true

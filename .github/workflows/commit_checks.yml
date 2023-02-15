@@ -16,8 +16,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - id: gen_checks
         run: |
-          checks=$(yq '.repos | map(.hooks | map(.id)) | flatten' .pre-commit-config.yaml)
-          printf "::set-output name=checks::%s" "$checks"
+          set -ex
+          yq --version
+          checks=$(yq -o j . .pre-commit-config.yaml | jq -c '.repos | map(.hooks | map(.id)) | flatten')
+          printf "checks=%s" "$checks" >> $GITHUB_OUTPUT
 
   run_checks:
     runs-on: ubuntu-20.04
