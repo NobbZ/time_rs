@@ -17,7 +17,7 @@ repos:
       - id: cargo-fmt
         name: Cargo Format
         language: system
-        entry: nix develop . -c cargo fmt --check
+        entry: cargo fmt --check
         always_run: true
         pass_filenames: false
 
