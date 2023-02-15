@@ -8,9 +8,6 @@
 
     nobbz.url = "github:nobbz/nixos-config";
 
-    cargo2nix.url = "github:cargo2nix/cargo2nix";
-    cargo2nix.inputs.rust-overlay.follows = "oxalica";
-
     dream2nix.url = "github:nix-community/dream2nix";
     dream2nix.inputs.nixpkgs.follows = "nixpkgs";
     dream2nix.inputs.all-cabal-json.follows = "nixpkgs";
@@ -33,13 +30,8 @@
         ...
       }: let
         rustTooling = pkgs.callPackage ./nix/rust_platform.nix {};
-        rustPkgs = pkgs.rustBuilder.makePackageSet {
-          rustVersion = "1.67.0";
-          rustChannel = "stable";
-          packageFun = import ./Cargo.nix;
-        };
       in {
-        _module.args.pkgs = (inputs'.nixpkgs.legacyPackages.extend inputs.oxalica.overlays.default).extend inputs.cargo2nix.overlays.default;
+        _module.args.pkgs = inputs'.nixpkgs.legacyPackages.extend inputs.oxalica.overlays.default;
 
         formatter = inputs'.nobbz.formatter;
 
@@ -59,7 +51,6 @@
 
         devShells.default = pkgs.callPackage ./nix/dev_shell.nix {
           inherit (rustTooling) rust;
-          inherit (inputs'.cargo2nix.packages) cargo2nix;
         };
       };
     };

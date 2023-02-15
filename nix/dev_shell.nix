@@ -4,7 +4,6 @@
   rust,
   rust-analyzer,
   cargo-nextest,
-  cargo2nix,
   nixpkgs-fmt,
   pre-commit,
 }: let
@@ -19,7 +18,6 @@ in
     version = "0.0.0";
 
     packages = [
-      cargo2nix
       rustWithExtensions
       rust-analyzer
       cargo-nextest
