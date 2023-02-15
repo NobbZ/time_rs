@@ -48,7 +48,7 @@ mod tests {
     #[case(Commands::Status(Status {}), "status")]
     #[case(Commands::Summary(Summary {}), "summary")]
     fn command_detection(#[case] cmd: Commands, #[case] arg: &str) {
-        let cli = Cli::parse_from(&["timers", arg]);
+        let cli = Cli::parse_from(["timers", arg]);
 
         assert_eq!(cmd, cli.command.unwrap());
     }

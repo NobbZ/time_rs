@@ -1,4 +1,4 @@
-{ mkShell, helix, rust, rust-analyzer, cargo2nix, nixpkgs-fmt }:
+{ mkShell, helix, rust, rust-analyzer, cargo-nextest, cargo2nix, nixpkgs-fmt }:
 
 let
   rustWithExtensions = rust.override {
@@ -15,6 +15,7 @@ mkShell {
     cargo2nix
     rustWithExtensions
     rust-analyzer
+    cargo-nextest
     nixpkgs-fmt
     helix
   ];

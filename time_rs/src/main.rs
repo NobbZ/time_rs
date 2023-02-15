@@ -1,14 +1,13 @@
 use std::{env, path::PathBuf};
 
 use clap::Parser;
+use directories::ProjectDirs;
 
 use time_rs::cli::{commands::Command, Cli, Commands};
 
 const XDG_DATA_HOME: &str = "XDG_DATA_HOME";
-const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
 
 const XDG_DATA_DEFAULT: &str = "~/.local/share";
-const XDG_CONFIG_DEFAULT: &str = "~/.config";
 
 const SUFFIX: &str = "timers";
 
@@ -22,15 +21,29 @@ fn get_data_dir() -> PathBuf {
     env_var_or_default_with_suffix(XDG_DATA_HOME, XDG_DATA_DEFAULT, SUFFIX)
 }
 
-fn get_config_dir() -> PathBuf {
-    env_var_or_default_with_suffix(XDG_CONFIG_HOME, XDG_CONFIG_DEFAULT, SUFFIX)
+fn get_config_dirs() -> Vec<PathBuf> {
+    // env_var_or_default_with_suffix(XDG_CONFIG_HOME, XDG_CONFIG_DEFAULT, SUFFIX)
+
+    let mut dirs = Vec::new();
+
+    ProjectDirs::from("dev", "nobbz", SUFFIX)
+        .map(|d| d.config_dir().to_owned())
+        .iter()
+        .for_each(|p| dirs.push(p.to_owned()));
+
+    env::var("XDG_DATA_DIRS")
+        .map_or(vec![], |dirs| dirs.split(':').map(PathBuf::from).collect())
+        .iter()
+        .for_each(|p| dirs.push(p.to_owned()));
+
+    dirs
 }
 
 fn main() {
     let cli = Cli::parse();
 
     let data_dir = cli.data_dir.unwrap_or_else(get_data_dir);
-    let config_dir = cli.config_dir.unwrap_or_else(get_config_dir);
+    let config_dir = cli.config_dir.map_or_else(get_config_dirs, |d| vec![d]);
 
     use Commands::*;
 

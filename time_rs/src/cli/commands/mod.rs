@@ -11,5 +11,5 @@ pub use stop::Stop;
 pub use summary::Summary;
 
 pub trait Command {
-    fn run(&self, data_dir: PathBuf, config_dir: PathBuf);
+    fn run(&self, data_dir: PathBuf, config_dir: Vec<PathBuf>);
 }

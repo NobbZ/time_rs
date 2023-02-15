@@ -8,7 +8,7 @@ use super::Command;
 pub struct Status {}
 
 impl Command for Status {
-    fn run(&self, data_dir: PathBuf, config_dir: PathBuf) {
+    fn run(&self, data_dir: PathBuf, config_dir: Vec<PathBuf>) {
         dbg!((data_dir, config_dir));
     }
 }

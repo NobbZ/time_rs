@@ -8,7 +8,7 @@ use super::Command;
 pub struct Stop {}
 
 impl Command for Stop {
-    fn run(&self, _data_dir: PathBuf, _config_dir: PathBuf) {
+    fn run(&self, _data_dir: PathBuf, _config_dir: Vec<PathBuf>) {
         todo!()
     }
 }
