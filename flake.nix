@@ -24,8 +24,8 @@
 
     rustTooling = pkgs.callPackage ./nix/rust_platform.nix {};
     rustPkgs = pkgs.rustBuilder.makePackageSet {
-      rustVersion = "2023-02-01";
-      rustChannel = "nightly";
+      rustVersion = "1.67.0";
+      rustChannel = "stable";
       packageFun = import ./Cargo.nix;
     };
   in {

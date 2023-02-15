@@ -2,7 +2,7 @@
   rust-bin,
   makeRustPlatform,
 }: let
-  rust = rust-bin.selectLatestNightlyWith (tc: tc.default);
+  rust = rust-bin.stable."1.67.0".default;
 
   rustc = rust;
   cargo = rust;
