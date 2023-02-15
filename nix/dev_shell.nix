@@ -4,8 +4,6 @@
   rust,
   rust-analyzer,
   cargo-nextest,
-  cargo2nix,
-  nixpkgs-fmt,
   pre-commit,
 }: let
   rustWithExtensions = rust.override {
@@ -19,11 +17,9 @@ in
     version = "0.0.0";
 
     packages = [
-      cargo2nix
       rustWithExtensions
       rust-analyzer
       cargo-nextest
-      nixpkgs-fmt
       helix
       pre-commit
     ];
