@@ -11,7 +11,6 @@ on:
 jobs:
   generate_matrix:
     runs-on: ubuntu-20.04
-    if: github.event_name != "pull_request" || github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name
     outputs:
       checks: ${{ steps.gen_checks.outputs.checks }}
     steps:
@@ -28,7 +27,6 @@ jobs:
 
   run_checks:
     runs-on: ubuntu-20.04
-    if: github.event_name != "pull_request" || github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name
     needs: [generate_matrix]
     strategy:
       fail-fast: false
