@@ -37,3 +37,10 @@ repos:
         files: ".*\\.nix$"
         exclude: "^Cargo.nix$"
         entry: nix fmt -- --check
+
+      - id: cargo-audit
+        name: Cargo Audit
+        language: system
+        always_run: true
+        pass_filenames: false
+        entry: cargo audit

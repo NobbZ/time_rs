@@ -7,6 +7,7 @@
   rust,
   rust-analyzer,
   cargo-nextest,
+  cargo-audit,
   pre-commit,
   nil,
 }: let
@@ -24,6 +25,7 @@ in
       rustWithExtensions
       rust-analyzer
       cargo-nextest
+      cargo-audit
       helix
       pre-commit
       nil

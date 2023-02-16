@@ -44,7 +44,7 @@
           projects.time_rs = {
             subsystem = "rust";
             translator = "cargo-lock";
-            # builder = "crane";
+            builder = "crane";
           };
           packageOverrides."^.*" = {
             set-toolchain.overrideRustToolchain = _: {
