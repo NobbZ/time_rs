@@ -9,6 +9,7 @@
   cargo-nextest,
   cargo-audit,
   cargo-deny,
+  cargo-tarpaulin,
   pre-commit,
   nil,
 }: let
@@ -28,6 +29,7 @@ in
       cargo-nextest
       cargo-audit
       cargo-deny
+      cargo-tarpaulin
       helix
       pre-commit
       nil
