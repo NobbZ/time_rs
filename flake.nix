@@ -27,6 +27,7 @@
       imports = [inputs.dream2nix.flakeModuleBeta];
 
       perSystem = {
+        config,
         inputs',
         system,
         pkgs,
@@ -40,7 +41,7 @@
 
         dream2nix.inputs.timers = {
           source = self;
-          projects.timers = {
+          projects.time_rs = {
             subsystem = "rust";
             translator = "cargo-lock";
             # builder = "crane";
@@ -50,6 +51,10 @@
               inherit (rustTooling) rustc cargo;
             };
           };
+        };
+
+        packages = {
+          inherit (config.dream2nix.outputs.timers.packages) default time_rs;
         };
 
         devShells.default = pkgs.callPackage ./nix/dev_shell.nix {
