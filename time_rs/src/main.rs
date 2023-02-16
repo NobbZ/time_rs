@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+#![cfg(not(tarpaulin_include))]
+
 use std::{env, path::PathBuf};
 
 use clap::Parser;
