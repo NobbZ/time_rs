@@ -27,8 +27,8 @@ repos:
       - id: cargo-fmt
         name: Cargo Format
         language: system
+        files: ".*\\.rs$"
         entry: cargo fmt --check
-        always_run: true
         pass_filenames: false
 
       - id: alejandra
