@@ -8,6 +8,7 @@
   rust-analyzer,
   cargo-nextest,
   pre-commit,
+  nil,
 }: let
   rustWithExtensions = rust.override {
     extensions = [
@@ -25,5 +26,6 @@ in
       cargo-nextest
       helix
       pre-commit
+      nil
     ];
   }

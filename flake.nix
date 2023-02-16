@@ -59,6 +59,7 @@
 
         devShells.default = pkgs.callPackage ./nix/dev_shell.nix {
           inherit (rustTooling) rust;
+          inherit (inputs'.nobbz.packages) nil;
         };
       };
     };
