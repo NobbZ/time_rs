@@ -12,6 +12,7 @@ use super::Command;
 pub struct Summary {}
 
 impl Command for Summary {
+    #[cfg(not(tarpaulin_include))]
     fn run(&self, data_dir: PathBuf, config_dir: Vec<PathBuf>) {
         dbg!((data_dir, config_dir));
     }

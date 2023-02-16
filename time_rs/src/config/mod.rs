@@ -39,6 +39,7 @@ impl Config {
         })
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn load(paths: Vec<PathBuf>) -> Self {
         Self::load_figment(paths).extract().unwrap()
     }
