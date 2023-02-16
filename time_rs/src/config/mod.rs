@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 Norbert Melzer <timmelzer@gmail.com>
+//
+// SPDX-License-Identifier: MIT
+
 use std::path::PathBuf;
 
 use figment::{

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023 Norbert Melzer <timmelzer@gmail.com>
+#
+# SPDX-License-Identifier: MIT
 {
   rust-bin,
   makeRustPlatform,
