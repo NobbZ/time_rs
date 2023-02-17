@@ -6,4 +6,4 @@ codecov:
   branch: main
 
 comment:
-  require_changes: true
+  require_changes: false
