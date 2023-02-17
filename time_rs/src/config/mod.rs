@@ -39,9 +39,9 @@ impl Config {
         })
     }
 
-    #[cfg(not(tarpaulin_include))]
     pub fn load(paths: Vec<PathBuf>) -> Self {
-        Self::load_figment(paths).extract().unwrap()
+        dbg!(&paths);
+        dbg!(Self::load_figment(paths)).extract().unwrap()
     }
 }
 
@@ -49,7 +49,7 @@ impl Config {
 mod tests {
     use super::*;
 
-    use assert_fs::prelude::*;
+    use assert_fs::{prelude::*, TempDir};
     use rstest::rstest;
     use rstest_reuse::*;
 
@@ -67,16 +67,17 @@ mod tests {
     {"default": {"data_dir": "/tmp"}}
     "#;
 
-    fn figment(name: &str, content: &str) -> (PathBuf, Figment, String) {
+    fn figment(name: &str, content: &str) -> (TempDir, PathBuf, Figment, String) {
         let tmp = assert_fs::TempDir::new().unwrap();
 
         tmp.child(name).write_str(content).unwrap();
 
-        let path = tmp.path();
+        let path = tmp.to_owned();
 
         (
-            path.to_owned(),
-            Config::load_figment(vec![path.to_owned()]),
+            tmp,
+            path.clone(),
+            Config::load_figment(vec![path]),
             name.to_owned(),
         )
     }
@@ -95,18 +96,28 @@ mod tests {
     #[case(figment("folder/config.json", JSON), "JSON file")]
     #[case(figment("folder/config.yml", YAML), "YAML file")]
     #[case(figment("folder/config.yml", JSON), "YAML file")]
-    fn the_template(#[case] figment_data: (PathBuf, Figment, String), #[case] md_name: &str) {}
+    fn the_template(
+        #[case] figment_data: (PathBuf, PathBuf, Figment, String),
+        #[case] md_name: &str,
+    ) {
+    }
 
     #[apply(the_template)]
-    fn count_metadata(#[case] figment_data: (PathBuf, Figment, String), #[case] _md_name: &str) {
-        let (_path, figment, _name) = figment_data;
+    fn count_metadata(
+        #[case] figment_data: (TempDir, PathBuf, Figment, String),
+        #[case] _md_name: &str,
+    ) {
+        let (_tmp, _path, figment, _name) = figment_data;
 
         assert_eq!(1, figment.metadata().count());
     }
 
     #[apply(the_template)]
-    fn metadata_name(#[case] figment_data: (PathBuf, Figment, String), #[case] md_name: &str) {
-        let (_path, figment, _name) = figment_data;
+    fn metadata_name(
+        #[case] figment_data: (TempDir, PathBuf, Figment, String),
+        #[case] md_name: &str,
+    ) {
+        let (_tmp, _path, figment, _name) = figment_data;
 
         let md = dbg!(figment.metadata().next().unwrap());
 
@@ -114,8 +125,11 @@ mod tests {
     }
 
     #[apply(the_template)]
-    fn metadata_filename(#[case] figment_data: (PathBuf, Figment, String), #[case] _md_name: &str) {
-        let (path, figment, name) = figment_data;
+    fn metadata_filename(
+        #[case] figment_data: (TempDir, PathBuf, Figment, String),
+        #[case] _md_name: &str,
+    ) {
+        let (_tmp, path, figment, name) = figment_data;
 
         let md = dbg!(figment.metadata().next().unwrap());
 
@@ -131,17 +145,24 @@ mod tests {
     }
 
     #[apply(the_template)]
-    fn config_data_dir(#[case] figment_data: (PathBuf, Figment, String), #[case] _md_name: &str) {
-        let (_path, figment, _name) = figment_data;
+    fn config_data_dir(
+        #[case] figment_data: (TempDir, PathBuf, Figment, String),
+        #[case] _md_name: &str,
+    ) {
+        let (_tmp, _path, figment, _name) = figment_data;
 
         let cfg: Config = figment.extract().unwrap();
 
         assert_eq!(PathBuf::from("/tmp"), cfg.data_dir);
     }
 
-    //     assert_eq!(
-    //         PathBuf::from("/tmp"),
-    //         figment.extract::<Config>().unwrap().data_dir
-    //     )
-    // }
+    #[apply(the_template)]
+    fn load_config_data_dir(
+        #[case] figment_data: (TempDir, PathBuf, Figment, String),
+        #[case] _md_name: &str,
+    ) {
+        let cfg = Config::load(vec![figment_data.0.path().to_owned()]);
+
+        assert_eq!(PathBuf::from("/tmp"), cfg.data_dir)
+    }
 }
