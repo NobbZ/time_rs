@@ -37,6 +37,8 @@
       in {
         _module.args.pkgs = inputs'.nixpkgs.legacyPackages.extend inputs.oxalica.overlays.default;
 
+        imports = [./nix/per_system/apps.nix];
+
         formatter = inputs'.nobbz.formatter;
 
         dream2nix.inputs.timers = {
