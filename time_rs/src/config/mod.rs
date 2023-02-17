@@ -96,6 +96,10 @@ mod tests {
     #[case(figment("folder/config.json", JSON), "JSON file")]
     #[case(figment("folder/config.yml", YAML), "YAML file")]
     #[case(figment("folder/config.yml", JSON), "YAML file")]
+    #[case(figment("random_name.toml", TOML), "TOML file")]
+    #[case(figment("random_name.yaml", YAML), "YAML file")]
+    #[case(figment("random_name.yaml", JSON), "YAML file")]
+    #[case(figment("random_name.json", JSON), "JSON file")]
     fn the_template(
         #[case] figment_data: (PathBuf, PathBuf, Figment, String),
         #[case] md_name: &str,
