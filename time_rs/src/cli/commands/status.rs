@@ -12,7 +12,6 @@ use super::Command;
 pub struct Status {}
 
 impl Command for Status {
-    #[cfg(not(tarpaulin_include))]
     fn run(&self, data_dir: PathBuf, config_dir: Vec<PathBuf>) {
         dbg!((data_dir, config_dir));
     }
