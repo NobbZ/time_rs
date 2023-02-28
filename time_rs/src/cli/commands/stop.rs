@@ -12,7 +12,6 @@ use super::Command;
 pub struct Stop {}
 
 impl Command for Stop {
-    #[cfg(not(tarpaulin_include))]
     fn run(&self, _data_dir: PathBuf, _config_dir: Vec<PathBuf>) {
         todo!()
     }
