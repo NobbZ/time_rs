@@ -19,7 +19,7 @@ jobs:
       matrix:
         toolchain: ["1.67.0", "nightly-2023-02-01", "nightly-2023-01-01"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           # By default actions/checkout checks out a merge commit. Check out the PR head instead.
           # https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -48,7 +48,7 @@ jobs:
         partition: [1, 2, 3, 4]
     steps:
       # The source directory must be checked out.
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           # By default actions/checkout checks out a merge commit. Check out the PR head instead.
           # https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
