@@ -60,7 +60,7 @@ jobs:
       - name: Install nextest
         uses: taiki-e/install-action@nextest
       - name: Download archive
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: nextest-archive-${{ matrix.toolchain }}
       - name: Run tests
