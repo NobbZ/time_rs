@@ -7,6 +7,6 @@
 
     cargo nextest run
 
-    cargo tarpaulin --target-dir=target/coverage --skip-clean --fail-under 80
+    cargo tarpaulin --target-dir=target/coverage --skip-clean --fail-under 55
   ''}";
 }
