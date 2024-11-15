@@ -5,6 +5,7 @@
 use std::path::PathBuf;
 
 use clap::Args;
+use eyre::Result;
 
 use super::Command;
 
@@ -12,8 +13,7 @@ use super::Command;
 pub struct Stop {}
 
 impl Command for Stop {
-    #[cfg(not(tarpaulin_include))]
-    fn run(&self, _data_dir: PathBuf, _config_dir: Vec<PathBuf>) {
+    fn run(&self, _data_dir: PathBuf, _config_dir: Vec<PathBuf>) -> Result<()> {
         todo!()
     }
 }

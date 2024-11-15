@@ -4,6 +4,8 @@
 
 use std::path::PathBuf;
 
+use eyre::Result;
+
 mod start;
 mod status;
 mod stop;
@@ -15,5 +17,5 @@ pub use stop::Stop;
 pub use summary::Summary;
 
 pub trait Command {
-    fn run(&self, data_dir: PathBuf, config_dir: Vec<PathBuf>);
+    fn run(&self, data_dir: PathBuf, config_dir: Vec<PathBuf>) -> Result<()>;
 }
