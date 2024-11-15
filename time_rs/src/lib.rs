@@ -4,6 +4,7 @@
 
 #[cfg(test)]
 #[allow(clippy::single_component_path_imports)]
+#[allow(unused_imports)]
 use rstest_reuse;
 
 pub mod cli;
