@@ -5,7 +5,7 @@
   rust-bin,
   makeRustPlatform,
 }: let
-  rust = rust-bin.stable."1.67.1".default;
+  rust = rust-bin.stable."1.80.0".default;
 
   rustc = rust;
   cargo = rust;
