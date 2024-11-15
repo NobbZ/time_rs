@@ -32,3 +32,6 @@ glob = "0.3.1"
 assert_fs = "1.0.10"
 rstest = "0.23.0"
 rstest_reuse = "0.7.0"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
