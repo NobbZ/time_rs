@@ -19,3 +19,17 @@ impl Command for Start {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn basic_operation_succeeds() {
+        let start = Start {};
+
+        let result = start.run("/".into(), vec!["/".into()]);
+
+        assert!(result.is_ok());
+    }
+}
