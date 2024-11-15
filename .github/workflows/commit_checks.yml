@@ -51,7 +51,7 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - run: nix profile install --inputs-from . nixpkgs#pre-commit nixpkgs#cargo-audit nixpkgs#cargo-deny
+      # - run: nix profile install --inputs-from . nixpkgs#pre-commit nixpkgs#cargo-audit nixpkgs#cargo-deny
       - name: run ${{ matrix.check }}
         run: |
-          pre-commit run ${{ matrix.check }} --all-files --verbose
+          nix shell . -c pre-commit run ${{ matrix.check }} --all-files --verbose
