@@ -61,14 +61,12 @@ fn main() -> Result<()> {
     use Commands::*;
 
     match &cli.command {
-        Some(Start(start)) => start.run(data_dir, config_dir).wrap_err("start command")?,
-        Some(Stop(stop)) => stop.run(data_dir, config_dir).wrap_err("stop command")?,
-        Some(Status(status)) => status
-            .run(data_dir, config_dir)
-            .wrap_err("status command")?,
+        Some(Start(start)) => start.run(data_dir, config_dir).wrap_err("start command"),
+        Some(Stop(stop)) => stop.run(data_dir, config_dir).wrap_err("stop command"),
+        Some(Status(status)) => status.run(data_dir, config_dir).wrap_err("status command"),
         Some(Summary(summary)) => summary
             .run(data_dir, config_dir)
-            .wrap_err("summary command")?,
+            .wrap_err("summary command"),
         None => todo!("We want to have a dashboard here, later…"),
-    };
+    }
 }
