@@ -30,5 +30,5 @@ glob = "0.3.1"
 
 [dev-dependencies]
 assert_fs = "1.0.10"
-rstest = "0.16.0"
+rstest = "0.23.0"
 rstest_reuse = "0.7.0"
