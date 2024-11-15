@@ -5,6 +5,7 @@
 use std::path::PathBuf;
 
 use clap::Args;
+use eyre::Result;
 
 use super::Command;
 
@@ -12,7 +13,9 @@ use super::Command;
 pub struct Status {}
 
 impl Command for Status {
-    fn run(&self, data_dir: PathBuf, config_dir: Vec<PathBuf>) {
+    fn run(&self, data_dir: PathBuf, config_dir: Vec<PathBuf>) -> Result<()> {
         dbg!((data_dir, config_dir));
+
+        Ok(())
     }
 }
