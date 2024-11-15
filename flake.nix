@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
 
     parts.url = "github:hercules-ci/flake-parts";
 
