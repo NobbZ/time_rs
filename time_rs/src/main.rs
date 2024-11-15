@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 #![cfg(not(tarpaulin_include))]
+#![warn(clippy::unwrap_used, clippy::expect_used)]
 
 use std::{env, path::PathBuf};
 

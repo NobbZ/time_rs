@@ -4,6 +4,7 @@
 
 use std::path::PathBuf;
 
+use eyre::{eyre, Context, Result};
 use figment::{
     providers::{Format, Json, Toml, Yaml},
     Figment,
@@ -16,32 +17,41 @@ pub struct Config {
 }
 
 impl Config {
-    fn load_figment(paths: Vec<PathBuf>) -> Figment {
+    fn load_figment(paths: Vec<PathBuf>) -> Result<Figment> {
         let figment = Figment::new();
 
-        paths.iter().fold(figment, |fig: Figment, p| {
-            glob::glob(p.join("**").join("*.*").to_str().unwrap())
-                .unwrap()
-                .fold(fig, |fig, f| {
-                    match dbg!(f.as_ref()).unwrap().extension().unwrap().to_str() {
-                        Some("yaml") | Some("yml") => fig.merge(Yaml::file(f.unwrap()).nested()),
-                        Some("toml") => fig.merge(Toml::file(f.unwrap()).nested()),
-                        Some("json") => fig.merge(Json::file(f.unwrap()).nested()),
-                        _ => {
-                            println!(
-                                "Unknown filetype in configuration at {file}",
-                                file = f.unwrap().display()
-                            );
-                            fig
-                        }
-                    }
-                })
-        })
+        paths
+            .iter()
+            .map(|p| p.join("**").join("*.*"))
+            .map(|p| {
+                p.to_str()
+                    .map(|s| s.to_string())
+                    .ok_or_else(|| eyre!("converting path {:?} to string", p))
+            })
+            .flat_map(|s| {
+                let s = s?;
+                glob::glob(&s).wrap_err_with(|| format!("creating glob from {}", s))
+            })
+            .flatten()
+            .map(|f| {
+                let file = f?;
+                let ext = file.extension().and_then(|s| s.to_str());
+
+                match ext {
+                    Some("yaml" | "yml") => Ok(Figment::from(Yaml::file(file).nested())),
+                    Some("toml") => Ok(Figment::from(Toml::file(file).nested())),
+                    Some("json") => Ok(Figment::from(Json::file(file).nested())),
+                    Some(ext) => Err(eyre!("unknown extension {}", ext)),
+                    None => Err(eyre!("no extension found")),
+                }
+            })
+            .try_fold(figment, |acc, additional| Ok(acc.merge(additional?)))
     }
 
-    pub fn load(paths: Vec<PathBuf>) -> Self {
-        dbg!(&paths);
-        dbg!(Self::load_figment(paths)).extract().unwrap()
+    pub fn load(paths: Vec<PathBuf>) -> Result<Self> {
+        let figment = Self::load_figment(paths).wrap_err("loading config")?;
+
+        figment.extract().wrap_err("extracting config")
     }
 }
 
@@ -77,7 +87,7 @@ mod tests {
         (
             tmp,
             path.clone(),
-            Config::load_figment(vec![path]),
+            Config::load_figment(vec![path]).unwrap(),
             name.to_owned(),
         )
     }
@@ -113,7 +123,7 @@ mod tests {
     ) {
         let (_tmp, _path, figment, _name) = figment_data;
 
-        assert_eq!(1, figment.metadata().count());
+        assert_eq!(2, figment.metadata().count());
     }
 
     #[apply(the_template)]
@@ -165,7 +175,7 @@ mod tests {
         #[case] figment_data: (TempDir, PathBuf, Figment, String),
         #[case] _md_name: &str,
     ) {
-        let cfg = Config::load(vec![figment_data.0.path().to_owned()]);
+        let cfg = Config::load(vec![figment_data.0.path().to_owned()]).unwrap();
 
         assert_eq!(PathBuf::from("/tmp"), cfg.data_dir)
     }

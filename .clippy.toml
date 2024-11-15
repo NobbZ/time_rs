@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2024 Norbert Melzer <timmelzer@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
+allow-unwrap-in-tests = true
+allow-dbg-in-tests = true
+allow-expect-in-tests = true
