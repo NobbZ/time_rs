@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-use std::path::PathBuf;
-
 use clap::Args;
 use eyre::Result;
+
+use crate::config::Config;
 
 use super::Command;
 
@@ -13,23 +13,27 @@ use super::Command;
 pub struct Start {}
 
 impl Command for Start {
-    fn run(&self, data_dir: PathBuf, config_dir: Vec<PathBuf>) -> Result<()> {
-        dbg!((data_dir, config_dir));
-
+    fn run(&self, _config: Config) -> Result<()> {
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use figment::Figment;
+
     use super::*;
 
     #[test]
-    fn basic_operation_succeeds() {
+    fn basic_operation_succeeds() -> Result<()> {
         let start = Start {};
+        let figment = Figment::new().merge(("data_dir", "/"));
+        let config = figment.try_into()?;
 
-        let result = start.run("/".into(), vec!["/".into()]);
+        let result = start.run(config);
 
         assert!(result.is_ok());
+
+        Ok(())
     }
 }

@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-use std::path::PathBuf;
-
 use clap::Args;
 use eyre::Result;
+
+use crate::config::Config;
 
 use super::Command;
 
@@ -13,9 +13,7 @@ use super::Command;
 pub struct Status {}
 
 impl Command for Status {
-    fn run(&self, data_dir: PathBuf, config_dir: Vec<PathBuf>) -> Result<()> {
-        dbg!((data_dir, config_dir));
-
+    fn run(&self, _config: Config) -> Result<()> {
         Ok(())
     }
 }

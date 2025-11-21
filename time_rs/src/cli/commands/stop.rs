@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-use std::path::PathBuf;
-
 use clap::Args;
 use eyre::Result;
+
+use crate::config::Config;
 
 use super::Command;
 
@@ -13,7 +13,7 @@ use super::Command;
 pub struct Stop {}
 
 impl Command for Stop {
-    fn run(&self, _data_dir: PathBuf, _config_dir: Vec<PathBuf>) -> Result<()> {
+    fn run(&self, _config: Config) -> Result<()> {
         todo!()
     }
 }

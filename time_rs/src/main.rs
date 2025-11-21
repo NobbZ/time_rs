@@ -11,7 +11,10 @@ use clap::Parser;
 use color_eyre::eyre::{OptionExt, Result, WrapErr};
 use directories::ProjectDirs;
 
-use time_rs::cli::{commands::Command, Cli, Commands};
+use time_rs::{
+    cli::{commands::Command, Cli, Commands},
+    config::Config,
+};
 
 const XDG_DATA_HOME: &str = "XDG_DATA_HOME";
 
@@ -34,7 +37,7 @@ fn get_config_dirs() -> Result<Vec<PathBuf>> {
 
     // TODO: make this lazy_static
     let project_dirs =
-        ProjectDirs::from("dev", "nobbz", SUFFIX).ok_or_eyre("resolving project dirs")?;
+        dbg!(ProjectDirs::from("dev", "nobbz", SUFFIX).ok_or_eyre("resolving project dirs"))?;
 
     let project_path = project_dirs.project_path();
 
@@ -59,15 +62,16 @@ fn main() -> Result<()> {
         .config_dir
         .map_or_else(get_config_dirs, |d| Ok(vec![d]))?;
 
+    let mut config = Config::load(config_dir)?;
+    config.add_data_dir(data_dir)?;
+
     use Commands::*;
 
     match &cli.command {
-        Some(Start(start)) => start.run(data_dir, config_dir).wrap_err("start command"),
-        Some(Stop(stop)) => stop.run(data_dir, config_dir).wrap_err("stop command"),
-        Some(Status(status)) => status.run(data_dir, config_dir).wrap_err("status command"),
-        Some(Summary(summary)) => summary
-            .run(data_dir, config_dir)
-            .wrap_err("summary command"),
+        Some(Start(start)) => start.run(config).wrap_err("start command"),
+        Some(Stop(stop)) => stop.run(config).wrap_err("stop command"),
+        Some(Status(status)) => status.run(config).wrap_err("status command"),
+        Some(Summary(summary)) => summary.run(config).wrap_err("summary command"),
         None => todo!("We want to have a dashboard here, later…"),
     }
 }

@@ -2,9 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-use std::path::PathBuf;
+use std::{
+    fmt::Debug,
+    path::{Path, PathBuf},
+};
 
-use eyre::{eyre, Context, Result};
+use eyre::{eyre, Context, Ok, Result};
 use figment::{
     providers::{Format, Json, Toml, Yaml},
     Figment,
@@ -14,6 +17,9 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub data_dir: PathBuf,
+
+    #[serde(skip)]
+    figment: Figment,
 }
 
 impl Config {
@@ -51,7 +57,34 @@ impl Config {
     pub fn load(paths: Vec<PathBuf>) -> Result<Self> {
         let figment = Self::load_figment(paths).wrap_err("loading config")?;
 
-        figment.extract().wrap_err("extracting config")
+        figment.try_into()
+    }
+
+    pub fn add_data_dir<P>(&mut self, path: P) -> Result<()>
+    where
+        P: AsRef<Path> + Debug,
+    {
+        let figment = self.figment.clone().merge((
+            "data_dir",
+            path.as_ref()
+                .to_str()
+                .ok_or_else(|| eyre!("Can not convert {:?} to string", path))?,
+        ));
+
+        *self = figment.clone().try_into()?;
+
+        Ok(())
+    }
+}
+
+impl TryFrom<Figment> for Config {
+    type Error = eyre::Report;
+
+    fn try_from(figment: Figment) -> Result<Self> {
+        Ok(Config {
+            figment: figment.clone(),
+            ..figment.extract().wrap_err("extracting config")?
+        })
     }
 }
 

@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-use std::path::PathBuf;
-
 use eyre::Result;
+
+use crate::config::Config;
 
 mod start;
 mod status;
@@ -16,6 +16,7 @@ pub use status::Status;
 pub use stop::Stop;
 pub use summary::Summary;
 
+/// Common interface to run subcommands from the CLI.
 pub trait Command {
-    fn run(&self, data_dir: PathBuf, config_dir: Vec<PathBuf>) -> Result<()>;
+    fn run(&self, config: Config) -> Result<()>;
 }
