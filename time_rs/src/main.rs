@@ -44,10 +44,14 @@ fn get_config_dirs() -> Result<Vec<PathBuf>> {
     dirs.push(project_dirs.config_dir().to_owned());
 
     env::var("XDG_CONFIG_DIRS")
-        .map_or(vec![], |dirs| dirs.split(':').map(PathBuf::from).collect())
-        .iter()
-        .map(|d| d.join(project_path))
-        .for_each(|p| dirs.push(p.to_owned()));
+        .into_iter()
+        .for_each(|xdg_dirs| {
+            xdg_dirs
+                .split(':')
+                .map(PathBuf::from)
+                .map(|d| d.join(project_path))
+                .for_each(|p| dirs.push(p.to_owned()))
+        });
 
     // TODO: Remove duplicates before returning
 
