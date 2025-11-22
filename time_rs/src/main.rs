@@ -35,9 +35,8 @@ fn get_data_dir() -> PathBuf {
 fn get_config_dirs() -> Result<Vec<PathBuf>> {
     let mut dirs = Vec::new();
 
-    // TODO: make this lazy_static
     let project_dirs =
-        dbg!(ProjectDirs::from("dev", "nobbz", SUFFIX).ok_or_eyre("resolving project dirs"))?;
+        ProjectDirs::from("dev", "nobbz", SUFFIX).ok_or_eyre("resolving project dirs")?;
 
     let project_path = project_dirs.project_path();
 
