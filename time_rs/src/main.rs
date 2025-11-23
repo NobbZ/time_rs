@@ -5,7 +5,7 @@
 #![cfg(not(tarpaulin_include))]
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 
-use std::{env, path::PathBuf};
+use std::{collections::HashSet, env, path::PathBuf};
 
 use clap::Parser;
 use color_eyre::eyre::{OptionExt, Result, WrapErr};
@@ -40,6 +40,9 @@ fn get_config_dirs() -> Result<Vec<PathBuf>> {
 
     let project_path = project_dirs.project_path();
 
+    let mut seen = HashSet::new();
+
+    seen.insert(project_dirs.config_dir().to_owned());
     dirs.push(project_dirs.config_dir().to_owned());
 
     env::var("XDG_CONFIG_DIRS")
@@ -49,10 +52,12 @@ fn get_config_dirs() -> Result<Vec<PathBuf>> {
                 .split(':')
                 .map(PathBuf::from)
                 .map(|d| d.join(project_path))
-                .for_each(|p| dirs.push(p.to_owned()))
+                .for_each(|p| {
+                    if seen.insert(p.to_owned()) {
+                        dirs.push(p.to_owned());
+                    }
+                })
         });
-
-    // TODO: Remove duplicates before returning
 
     Ok(dirs)
 }
