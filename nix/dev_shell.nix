@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 {
   mkShell,
-  helix,
   rust,
   rust-analyzer,
   cargo-nextest,
@@ -12,6 +11,9 @@
   cargo-tarpaulin,
   pre-commit,
   nil,
+  pkg-config,
+  openssl,
+  bacon,
 }: let
   rustWithExtensions = rust.override {
     extensions = [
@@ -25,13 +27,15 @@ in
 
     packages = [
       rustWithExtensions
+      bacon
       rust-analyzer
       cargo-nextest
       cargo-audit
       cargo-deny
       cargo-tarpaulin
-      helix
       pre-commit
       nil
+      pkg-config
+      openssl
     ];
   }
