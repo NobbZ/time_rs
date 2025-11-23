@@ -10,6 +10,7 @@ use std::{collections::HashSet, env, path::PathBuf};
 use clap::Parser;
 use color_eyre::eyre::{OptionExt, Result, WrapErr};
 use directories::ProjectDirs;
+use lazy_static::lazy_static;
 
 use time_rs::{
     cli::{commands::Command, Cli, Commands},
@@ -21,6 +22,10 @@ const XDG_DATA_HOME: &str = "XDG_DATA_HOME";
 const XDG_DATA_DEFAULT: &str = "~/.local/share";
 
 const SUFFIX: &str = "timers";
+
+lazy_static! {
+    static ref PROJECT_DIRS: Option<ProjectDirs> = ProjectDirs::from("dev", "nobbz", SUFFIX);
+}
 
 fn env_var_or_default_with_suffix(var: &str, default: &str, suffix: &str) -> PathBuf {
     let base: PathBuf = env::var_os(var).unwrap_or_else(|| default.into()).into();
@@ -35,8 +40,7 @@ fn get_data_dir() -> PathBuf {
 fn get_config_dirs() -> Result<Vec<PathBuf>> {
     let mut dirs = Vec::new();
 
-    let project_dirs =
-        ProjectDirs::from("dev", "nobbz", SUFFIX).ok_or_eyre("resolving project dirs")?;
+    let project_dirs = PROJECT_DIRS.clone().ok_or_eyre("resolving project dirs")?;
 
     let project_path = project_dirs.project_path();
 
