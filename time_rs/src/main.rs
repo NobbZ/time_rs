@@ -53,9 +53,7 @@ fn get_config_dirs() -> Result<Vec<PathBuf>> {
                 .map(PathBuf::from)
                 .map(|d| d.join(project_path))
                 .for_each(|p| {
-                    if seen.insert(p.to_owned()) {
-                        dirs.push(p.to_owned());
-                    }
+                    seen.insert(p.to_owned()).then(|| dirs.push(p.to_owned()));
                 })
         });
 
