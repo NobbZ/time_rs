@@ -5,7 +5,7 @@
 #![cfg(not(tarpaulin_include))]
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 
-use std::{collections::HashSet, env, path::PathBuf};
+use std::{collections::HashSet, env, path::PathBuf, str::FromStr};
 
 use clap::Parser;
 use color_eyre::eyre::{OptionExt, Result, WrapErr};
@@ -33,8 +33,12 @@ fn env_var_or_default_with_suffix(var: &str, default: &str, suffix: &str) -> Pat
     base.join(suffix)
 }
 
-fn get_data_dir() -> PathBuf {
-    env_var_or_default_with_suffix(XDG_DATA_HOME, XDG_DATA_DEFAULT, SUFFIX)
+fn get_data_dir() -> Result<PathBuf> {
+    let raw_data_dir = env_var_or_default_with_suffix(XDG_DATA_HOME, XDG_DATA_DEFAULT, SUFFIX)
+        .to_string_lossy()
+        .to_string();
+    let expanded_str = shellexpand::tilde(raw_data_dir.as_str()).to_string();
+    Ok(PathBuf::from_str(expanded_str.as_str())?)
 }
 
 fn get_config_dirs() -> Result<Vec<PathBuf>> {
@@ -67,7 +71,10 @@ fn get_config_dirs() -> Result<Vec<PathBuf>> {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let data_dir = cli.data_dir.unwrap_or_else(get_data_dir);
+    let data_dir = match cli.data_dir {
+        None => get_data_dir()?,
+        Some(path) => path,
+    };
     let config_dir = cli
         .config_dir
         .map_or_else(get_config_dirs, |d| Ok(vec![d]))?;
@@ -78,9 +85,10 @@ fn main() -> Result<()> {
     use Commands::*;
 
     match &cli.command {
+        Some(Repo(repo)) => repo.run(config).wrap_err("repo command"),
         Some(Start(start)) => start.run(config).wrap_err("start command"),
-        Some(Stop(stop)) => stop.run(config).wrap_err("stop command"),
         Some(Status(status)) => status.run(config).wrap_err("status command"),
+        Some(Stop(stop)) => stop.run(config).wrap_err("stop command"),
         Some(Summary(summary)) => summary.run(config).wrap_err("summary command"),
         None => todo!("We want to have a dashboard here, later…"),
     }

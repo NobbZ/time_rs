@@ -33,6 +33,8 @@ pub enum Commands {
     Status(commands::Status),
     /// Prints the summary of a given time frame
     Summary(commands::Summary),
+    /// Do operations on the underlying repository
+    Repo(commands::Repo),
 }
 
 #[cfg(test)]

@@ -16,7 +16,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub data_dir: PathBuf,
+    pub data_dir: Option<PathBuf>,
 
     #[serde(skip)]
     figment: Figment,
@@ -200,7 +200,7 @@ mod tests {
 
         let cfg: Config = figment.extract().unwrap();
 
-        assert_eq!(PathBuf::from("/tmp"), cfg.data_dir);
+        assert_eq!(Some(PathBuf::from("/tmp")), cfg.data_dir);
     }
 
     #[apply(the_template)]
@@ -210,6 +210,6 @@ mod tests {
     ) {
         let cfg = Config::load(vec![figment_data.0.path().to_owned()]).unwrap();
 
-        assert_eq!(PathBuf::from("/tmp"), cfg.data_dir)
+        assert_eq!(Some(PathBuf::from("/tmp")), cfg.data_dir)
     }
 }

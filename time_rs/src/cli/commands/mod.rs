@@ -6,11 +6,13 @@ use eyre::Result;
 
 use crate::config::Config;
 
+mod repo;
 mod start;
 mod status;
 mod stop;
 mod summary;
 
+pub use repo::Repo;
 pub use start::Start;
 pub use status::Status;
 pub use stop::Stop;
