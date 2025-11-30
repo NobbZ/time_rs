@@ -187,10 +187,6 @@ mod tests {
     use super::*;
     use crate::cli::Commands;
 
-    fn create_repo_cmd(command: RepoCommand) -> Repo {
-        Repo { command }
-    }
-
     #[fixture]
     fn progress() -> Arc<Root> {
         Options::default().create().into()
@@ -201,6 +197,13 @@ mod tests {
         Cli {
             command: Some(Commands::Repo(Repo { command })),
             ..Default::default()
+        }
+    }
+
+    #[fixture]
+    fn destroy_repo() -> Repo {
+        Repo {
+            command: RepoCommand::Destroy {},
         }
     }
 
@@ -288,28 +291,28 @@ mod tests {
         assert!(tmp.child("repo").exists());
     }
 
-    #[test]
-    fn destroy_fails_without_force_flag() {
+    #[rstest]
+    fn destroy_fails_without_force_flag(destroy_repo: Repo, progress: Arc<prodash::tree::Root>) {
         let temp = assert_fs::TempDir::new().unwrap();
-        let repo = create_repo_cmd(RepoCommand::Destroy {});
         let figment = Figment::new().merge(("data_dir", temp.path().to_str().unwrap()));
         let cli_args = Cli {
-            command: Some(Commands::Repo(create_repo_cmd(RepoCommand::Destroy {}))),
+            command: Some(Commands::Repo(Repo {
+                command: RepoCommand::Destroy {},
+            })),
             force: false,
             ..Default::default()
         };
         let config = figment.try_into().unwrap();
-        let progress: Arc<_> = Options::default().create().into();
 
-        let result = repo.run(progress, &cli_args, config);
+        let result = destroy_repo.run(progress, &cli_args, config);
 
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(err.to_string().contains("requires `--force` to be present"));
     }
 
-    #[test]
-    fn destroy_succeeds_with_force_flag() {
+    #[rstest]
+    fn destroy_succeeds_with_force_flag(destroy_repo: Repo, progress: Arc<prodash::tree::Root>) {
         let temp = assert_fs::TempDir::new().unwrap();
         // Create a repo folder with some content
         let repo_dir = temp.child("repo");
@@ -318,38 +321,41 @@ mod tests {
         repo_dir.child("nested").create_dir_all().unwrap();
         repo_dir.child("nested/inner.txt").touch().unwrap();
 
-        let repo = create_repo_cmd(RepoCommand::Destroy {});
         let figment = Figment::new().merge(("data_dir", temp.path().to_str().unwrap()));
         let cli_args = Cli {
-            command: Some(Commands::Repo(create_repo_cmd(RepoCommand::Destroy {}))),
+            command: Some(Commands::Repo(Repo {
+                command: RepoCommand::Destroy {},
+            })),
             force: true,
             ..Default::default()
         };
         let config = figment.try_into().unwrap();
-        let progress: Arc<_> = Options::default().create().into();
 
-        let result = repo.run(progress, &cli_args, config);
+        let result = destroy_repo.run(progress, &cli_args, config);
 
         assert!(result.is_ok());
         assert!(!repo_dir.exists());
     }
 
-    #[test]
-    fn destroy_fails_when_repo_folder_does_not_exist() {
+    #[rstest]
+    fn destroy_fails_when_repo_folder_does_not_exist(
+        destroy_repo: Repo,
+        progress: Arc<prodash::tree::Root>,
+    ) {
         let temp = assert_fs::TempDir::new().unwrap();
         // Don't create repo folder - it should fail when trying to read the directory
 
-        let repo = create_repo_cmd(RepoCommand::Destroy {});
         let figment = Figment::new().merge(("data_dir", temp.path().to_str().unwrap()));
         let cli_args = Cli {
-            command: Some(Commands::Repo(create_repo_cmd(RepoCommand::Destroy {}))),
+            command: Some(Commands::Repo(Repo {
+                command: RepoCommand::Destroy {},
+            })),
             force: true,
             ..Default::default()
         };
         let config = figment.try_into().unwrap();
-        let progress: Arc<_> = Options::default().create().into();
 
-        let result = repo.run(progress, &cli_args, config);
+        let result = destroy_repo.run(progress, &cli_args, config);
 
         // The operation should fail because the repo folder doesn't exist
         assert!(result.is_err());
