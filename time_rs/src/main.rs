@@ -99,8 +99,7 @@ fn main() -> Result<()> {
     let config_dir = cli
         .config_dir
         .clone()
-        .map_or_else(get_config_dirs, |d| Ok(vec![d]))?
-        .clone();
+        .map_or_else(get_config_dirs, |d| Ok(vec![d]))?;
 
     let mut config = Config::load(config_dir)?;
     config.add_data_dir(data_dir)?;
