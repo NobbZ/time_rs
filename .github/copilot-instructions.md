@@ -1,9 +1,3 @@
-<!--
-SPDX-FileCopyrightText: 2025 Norbert Melzer <timmelzer@gmail.com>
-
-SPDX-License-Identifier: CC0-1.0
--->
-
 # Copilot Instructions
 
 This document provides instructions for GitHub Copilot when working with this repository.
