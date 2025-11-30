@@ -22,7 +22,7 @@ use prodash::{tree::Root, unit::display::Mode};
 use super::Command;
 use crate::{cli::Cli, config::Config};
 
-#[derive(Debug, PartialEq, Eq, Args)]
+#[derive(Debug, PartialEq, Eq, Args, Clone)]
 pub struct Repo {
     #[command(subcommand)]
     command: RepoCommand,
@@ -173,4 +173,114 @@ where
     progress.inc();
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use assert_fs::prelude::*;
+    use figment::Figment;
+    use prodash::tree::root::Options;
+    use rstest::*;
+
+    use super::*;
+    use crate::cli::Commands;
+
+    #[fixture]
+    fn progress() -> Arc<Root> {
+        Options::default().create().into()
+    }
+
+    #[fixture]
+    fn cli_args(#[default(RepoCommand::Init {})] command: RepoCommand) -> Cli {
+        Cli {
+            command: Some(Commands::Repo(Repo { command })),
+            ..Default::default()
+        }
+    }
+
+    #[rstest]
+    fn clone_fails_without_data_dir(progress: Arc<Root>) {
+        let repo = Repo {
+            command: RepoCommand::Clone {
+                url: "https://github.com/NobbZ/time_rs".to_string(),
+            },
+        };
+
+        let figment = Figment::new(); // No data_dir specified
+        let config: Config = figment.try_into().unwrap();
+        let cli_args = cli_args(repo.command.clone());
+
+        let result = repo.run(progress, &cli_args, config);
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("no datadir specified"));
+    }
+
+    #[rstest]
+    fn clone_fails_with_invalid_url(progress: Arc<Root>) {
+        let tmp = assert_fs::TempDir::new().unwrap();
+
+        let repo = Repo {
+            command: RepoCommand::Clone {
+                url: "not-a-valid-url".to_string(),
+            },
+        };
+
+        let figment = Figment::new().merge(("data_dir", tmp.path().to_str().unwrap()));
+        let config: Config = figment.try_into().unwrap();
+        let cli_args = cli_args(repo.command.clone());
+
+        let result = repo.run(progress, &cli_args, config);
+
+        assert!(result.is_err());
+    }
+
+    #[rstest]
+    fn clone_fails_when_destination_not_empty(progress: Arc<Root>) {
+        let tmp = assert_fs::TempDir::new().unwrap();
+
+        // Create the repo directory with some content to make it non-empty
+        tmp.child("repo").create_dir_all().unwrap();
+        tmp.child("repo/existing_file.txt")
+            .write_str("existing content")
+            .unwrap();
+
+        let repo = Repo {
+            command: RepoCommand::Clone {
+                url: "https://github.com/NobbZ/time_rs".to_string(),
+            },
+        };
+
+        let figment = Figment::new().merge(("data_dir", tmp.path().to_str().unwrap()));
+        let config: Config = figment.try_into().unwrap();
+        let cli_args = cli_args(repo.command.clone());
+
+        let result = repo.run(progress, &cli_args, config);
+
+        // Should fail because destination is not empty
+        assert!(result.is_err());
+    }
+
+    #[rstest]
+    fn init_succeeds_with_empty_directory(progress: Arc<Root>) {
+        let tmp = assert_fs::TempDir::new().unwrap();
+
+        let repo = Repo {
+            command: RepoCommand::Init {},
+        };
+
+        let figment = Figment::new().merge(("data_dir", tmp.path().to_str().unwrap()));
+        let config: Config = figment.try_into().unwrap();
+        let cli_args = cli_args(repo.command.clone());
+
+        let result = repo.run(progress, &cli_args, config);
+
+        assert!(result.is_ok());
+        assert!(tmp.child("repo").exists());
+    }
 }
