@@ -11,7 +11,7 @@ WORKFLOW_COMMIT_CHECKS := $(WORKFLOWS_DIR)/commit_checks.yml
 
 WORKFLOWS := $(WORKFLOW_CI) $(WORKFLOW_VALIDATE) $(WORKFLOW_COMMIT_CHECKS)
 
-.PHONY: workflows check
+.PHONY: all workflows check
 
 all: workflows
 
