@@ -8,17 +8,15 @@
 name: Validate Generated Workflows
 "on":
   - pull_request
-permissions:
-  contents: read
 jobs:
   validate:
     name: Validate Workflows
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install CUE
         uses: cue-lang/setup-cue@v1.0.1
+        with:
+          version: v0.15.1
       - name: Generate workflows from CUE
-        run: make generate-workflows
-      - name: Check for uncommitted changes
-        run: if ! git diff --exit-code .github/workflows/; then echo 'Generated workflows are out of date. Run make generate-workflows and commit the changes.'; exit 1; fi
+        run: make check

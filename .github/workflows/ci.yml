@@ -9,14 +9,12 @@ name: CI
 "on":
   - push
   - pull_request
-permissions:
-  contents: read
 jobs:
   build_and_test:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build all targets
         run: cargo build --all-targets
       - name: Run tests
