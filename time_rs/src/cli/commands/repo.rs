@@ -181,7 +181,7 @@ mod tests {
 
     use assert_fs::prelude::*;
     use figment::Figment;
-    use prodash::tree::root::Options;
+    use prodash::{tree::root::Options, unit::display::Mode};
     use rstest::*;
 
     use super::*;
@@ -359,5 +359,121 @@ mod tests {
 
         // The operation should fail because the repo folder doesn't exist
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn remove_folder_empty_directory() -> Result<()> {
+        let tmp = assert_fs::TempDir::new()?;
+        let test_dir = tmp.child("empty_dir");
+        test_dir.create_dir_all()?;
+
+        let progress: Arc<_> = Options::default().create().into();
+        let mode = Mode::with_throughput().and_percentage();
+        let files = prodash::unit::label_and_mode("files", mode);
+        let mut destroy_progress = progress.add_child("test");
+        destroy_progress.init(Some(0), Some(files));
+
+        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress);
+
+        assert!(result.is_ok());
+        assert!(!test_dir.path().exists());
+
+        Ok(())
+    }
+
+    #[test]
+    fn remove_folder_with_files() -> Result<()> {
+        let tmp = assert_fs::TempDir::new()?;
+        let test_dir = tmp.child("dir_with_files");
+        test_dir.create_dir_all()?;
+        test_dir.child("file1.txt").write_str("content1")?;
+        test_dir.child("file2.txt").write_str("content2")?;
+
+        let progress: Arc<_> = Options::default().create().into();
+        let mode = Mode::with_throughput().and_percentage();
+        let files = prodash::unit::label_and_mode("files", mode);
+        let mut destroy_progress = progress.add_child("test");
+        destroy_progress.init(Some(0), Some(files));
+
+        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress);
+
+        assert!(result.is_ok());
+        assert!(!test_dir.path().exists());
+
+        Ok(())
+    }
+
+    #[test]
+    fn remove_folder_nested_directories() -> Result<()> {
+        let tmp = assert_fs::TempDir::new()?;
+        let test_dir = tmp.child("nested");
+        test_dir.create_dir_all()?;
+
+        // Create nested structure: nested/level1/level2/file.txt
+        let level1 = test_dir.child("level1");
+        level1.create_dir_all()?;
+        level1.child("file_at_level1.txt").write_str("content")?;
+
+        let level2 = level1.child("level2");
+        level2.create_dir_all()?;
+        level2.child("file_at_level2.txt").write_str("content")?;
+
+        // Add another sibling directory
+        let sibling = test_dir.child("sibling");
+        sibling.create_dir_all()?;
+        sibling.child("sibling_file.txt").write_str("content")?;
+
+        let progress: Arc<_> = Options::default().create().into();
+        let mode = Mode::with_throughput().and_percentage();
+        let files = prodash::unit::label_and_mode("files", mode);
+        let mut destroy_progress = progress.add_child("test");
+        destroy_progress.init(Some(0), Some(files));
+
+        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress);
+
+        assert!(result.is_ok());
+        assert!(!test_dir.path().exists());
+        assert!(!level1.path().exists());
+        assert!(!level2.path().exists());
+        assert!(!sibling.path().exists());
+
+        Ok(())
+    }
+
+    #[test]
+    fn remove_folder_updates_progress_correctly() -> Result<()> {
+        let tmp = assert_fs::TempDir::new()?;
+        let test_dir = tmp.child("progress_test");
+        test_dir.create_dir_all()?;
+
+        // Create a known structure:
+        // progress_test/
+        //   file1.txt
+        //   sub/
+        //     file2.txt
+        test_dir.child("file1.txt").write_str("content")?;
+        let sub = test_dir.child("sub");
+        sub.create_dir_all()?;
+        sub.child("file2.txt").write_str("content")?;
+
+        let progress: Arc<_> = Options::default().create().into();
+        let mode = Mode::with_throughput().and_percentage();
+        let files = prodash::unit::label_and_mode("files", mode);
+        let mut destroy_progress = progress.add_child("test");
+        destroy_progress.init(Some(0), Some(files));
+
+        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress);
+
+        assert!(result.is_ok());
+        assert!(!test_dir.path().exists());
+        // Progress should have been updated for:
+        // - 2 entries at root (file1.txt and sub/)
+        // - 1 entry in sub/ (file2.txt)
+        // - Each directory removal (sub/ and progress_test/)
+        // - Each file removal (file1.txt and file2.txt)
+        // Total max should be 3 (2 root entries + 1 sub entry)
+        assert_eq!(destroy_progress.max(), Some(3));
+
+        Ok(())
     }
 }
