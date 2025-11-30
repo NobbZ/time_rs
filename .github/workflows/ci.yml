@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 Norbert Melzer <timmelzer@gmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+# This file is generated from internal/ci/workflows.cue
+# Do not edit directly. Run ./scripts/generate-workflows.sh to regenerate.
+
+name: CI
+"on":
+  - push
+  - pull_request
+jobs:
+  build_and_test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build all targets
+        run: cargo build --all-targets
+      - name: Run tests
+        run: cargo nextest run --no-fail-fast || cargo test
