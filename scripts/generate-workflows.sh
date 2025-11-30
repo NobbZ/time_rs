@@ -29,11 +29,8 @@ mkdir -p "$WORKFLOWS_DIR"
 
 # Export workflows from CUE and write each one to a separate YAML file
 cd "$CUE_DIR"
-cue export --out json -e workflows | \
-    jq -r 'to_entries[] | "\(.key)\n\(.value | @json)"' | \
-    while read -r filename; do
-        read -r content
-        printf '%s' "$SPDX_HEADER" > "$WORKFLOWS_DIR/$filename"
-        echo "$content" | yq -P >> "$WORKFLOWS_DIR/$filename"
-        echo "Generated $WORKFLOWS_DIR/$filename"
-    done
+cue export --out json -e workflows | jq -r 'keys[]' | while read -r filename; do
+    printf '%s' "$SPDX_HEADER" > "$WORKFLOWS_DIR/$filename"
+    cue export --out json -e "workflows.\"$filename\"" | yq -P >> "$WORKFLOWS_DIR/$filename"
+    echo "Generated $WORKFLOWS_DIR/$filename"
+done

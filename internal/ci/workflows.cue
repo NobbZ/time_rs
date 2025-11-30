@@ -8,6 +8,9 @@ workflows: {
 	"ci.yml": {
 		name: "CI"
 		on: ["push", "pull_request"]
+		permissions: {
+			contents: "read"
+		}
 		jobs: {
 			build_and_test: {
 				name:        "Build and Test"
@@ -32,6 +35,9 @@ workflows: {
 	"validate-generated-workflows.yml": {
 		name: "Validate Generated Workflows"
 		on: ["pull_request"]
+		permissions: {
+			contents: "read"
+		}
 		jobs: {
 			validate: {
 				name:      "Validate Workflows"
