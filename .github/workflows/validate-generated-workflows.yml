@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-# This file is generated from internal/ci/workflows.cue
+# This file is generated from internal/ci/
 # Do not edit directly. Run make workflows to regenerate.
 
 name: Validate Generated Workflows
