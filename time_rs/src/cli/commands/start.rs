@@ -2,8 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
+use std::sync::Arc;
+
 use clap::Args;
 use eyre::Result;
+use prodash::tree::Root;
 
 use crate::config::Config;
 
@@ -13,14 +16,17 @@ use super::Command;
 pub struct Start {}
 
 impl Command for Start {
-    fn run(&self, _config: Config) -> Result<()> {
+    fn run(&self, _progress: Arc<Root>, _config: Config) -> Result<()> {
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use figment::Figment;
+    use prodash::tree::root::Options;
 
     use super::*;
 
@@ -29,8 +35,9 @@ mod tests {
         let start = Start {};
         let figment = Figment::new().merge(("data_dir", "/"));
         let config = figment.try_into()?;
+        let progress: Arc<_> = Options::default().create().into();
 
-        let result = start.run(config);
+        let result = start.run(progress, config);
 
         assert!(result.is_ok());
 

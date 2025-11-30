@@ -32,6 +32,7 @@ color-eyre = "0.6.5"
 lazy_static = "1.5.0"
 gix = { version = "0.75.0", features = ["blocking-network-client", "worktree-mutation"] }
 shellexpand = "3.1.1"
+prodash = { version = "30.0.1", features = ["render-line-crossterm", "render-line"] }
 
 [dev-dependencies]
 assert_fs = "1.1.3"

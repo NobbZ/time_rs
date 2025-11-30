@@ -5,13 +5,13 @@
 #![cfg(not(tarpaulin_include))]
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 
-use std::{collections::HashSet, env, path::PathBuf, str::FromStr};
+use std::{collections::HashSet, env, path::PathBuf, str::FromStr, sync::Arc};
 
 use clap::Parser;
 use color_eyre::eyre::{OptionExt, Result, WrapErr};
 use directories::ProjectDirs;
 use lazy_static::lazy_static;
-
+use prodash::{tree::root::Options, tree::Root};
 use time_rs::{
     cli::{commands::Command, Cli, Commands},
     config::Config,
@@ -68,8 +68,29 @@ fn get_config_dirs() -> Result<Vec<PathBuf>> {
     Ok(dirs)
 }
 
+fn setup_progress() -> Arc<Root> {
+    // Create the progress root
+    let progress: Arc<_> = Options {
+        message_buffer_capacity: 1000,
+        ..Default::default()
+    }
+    .create()
+    .into();
+
+    progress
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
+
+    let progress = setup_progress();
+    let mut handle = prodash::render::line::render(
+        std::io::stderr(),
+        Arc::downgrade(&progress),
+        prodash::render::line::Options::default()
+            .auto_configure(prodash::render::line::StreamKind::Stderr),
+    );
+    handle.disconnect();
 
     let data_dir = match cli.data_dir {
         None => get_data_dir()?,
@@ -85,11 +106,11 @@ fn main() -> Result<()> {
     use Commands::*;
 
     match &cli.command {
-        Some(Repo(repo)) => repo.run(config).wrap_err("repo command"),
-        Some(Start(start)) => start.run(config).wrap_err("start command"),
-        Some(Status(status)) => status.run(config).wrap_err("status command"),
-        Some(Stop(stop)) => stop.run(config).wrap_err("stop command"),
-        Some(Summary(summary)) => summary.run(config).wrap_err("summary command"),
+        Some(Repo(repo)) => repo.run(progress, config).wrap_err("repo command"),
+        Some(Start(start)) => start.run(progress, config).wrap_err("start command"),
+        Some(Status(status)) => status.run(progress, config).wrap_err("status command"),
+        Some(Stop(stop)) => stop.run(progress, config).wrap_err("stop command"),
+        Some(Summary(summary)) => summary.run(progress, config).wrap_err("summary command"),
         None => todo!("We want to have a dashboard here, later…"),
     }
 }

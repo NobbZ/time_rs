@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
+use std::sync::Arc;
+
 use eyre::Result;
+use prodash::tree::Root;
 
 use crate::config::Config;
 
@@ -20,5 +23,5 @@ pub use summary::Summary;
 
 /// Common interface to run subcommands from the CLI.
 pub trait Command {
-    fn run(&self, config: Config) -> Result<()>;
+    fn run(&self, progress_root: Arc<Root>, config: Config) -> Result<()>;
 }
