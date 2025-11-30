@@ -94,11 +94,13 @@ fn main() -> Result<()> {
 
     let data_dir = match cli.data_dir {
         None => get_data_dir()?,
-        Some(path) => path,
+        Some(ref path) => path.clone(),
     };
     let config_dir = cli
         .config_dir
-        .map_or_else(get_config_dirs, |d| Ok(vec![d]))?;
+        .clone()
+        .map_or_else(get_config_dirs, |d| Ok(vec![d]))?
+        .clone();
 
     let mut config = Config::load(config_dir)?;
     config.add_data_dir(data_dir)?;
@@ -106,11 +108,15 @@ fn main() -> Result<()> {
     use Commands::*;
 
     match &cli.command {
-        Some(Repo(repo)) => repo.run(progress, config).wrap_err("repo command"),
-        Some(Start(start)) => start.run(progress, config).wrap_err("start command"),
-        Some(Status(status)) => status.run(progress, config).wrap_err("status command"),
-        Some(Stop(stop)) => stop.run(progress, config).wrap_err("stop command"),
-        Some(Summary(summary)) => summary.run(progress, config).wrap_err("summary command"),
+        Some(Repo(repo)) => repo.run(progress, &cli, config).wrap_err("repo command"),
+        Some(Start(start)) => start.run(progress, &cli, config).wrap_err("start command"),
+        Some(Status(status)) => status
+            .run(progress, &cli, config)
+            .wrap_err("status command"),
+        Some(Stop(stop)) => stop.run(progress, &cli, config).wrap_err("stop command"),
+        Some(Summary(summary)) => summary
+            .run(progress, &cli, config)
+            .wrap_err("summary command"),
         None => todo!("We want to have a dashboard here, later…"),
     }
 }

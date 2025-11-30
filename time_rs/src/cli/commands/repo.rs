@@ -2,19 +2,25 @@
 //
 // SPDX-License-Identifier: MIT
 
-use std::sync::Arc;
+use std::{
+    fs,
+    path::PathBuf,
+    sync::Arc,
+    thread::sleep,
+    time::{Duration, Instant},
+};
 
 use clap::{Args, Subcommand};
-use eyre::{OptionExt, Result};
+use eyre::{ensure, OptionExt, Result};
 use gix::{
     clone::PrepareFetch,
     create::{Kind, Options},
-    ThreadSafeRepository,
+    NestedProgress, Progress, ThreadSafeRepository,
 };
 use prodash::{tree::Root, unit::display::Mode};
 
 use super::Command;
-use crate::config::Config;
+use crate::{cli::Cli, config::Config};
 
 #[derive(Debug, PartialEq, Eq, Args)]
 pub struct Repo {
@@ -33,14 +39,17 @@ pub enum RepoCommand {
         /// URL
         url: String,
     },
+    /// Delete the repo locally
+    Destroy {},
 }
 
 impl Command for Repo {
-    fn run(&self, progress: Arc<Root>, config: Config) -> Result<()> {
+    fn run(&self, progress: Arc<Root>, args: &Cli, config: Config) -> Result<()> {
         match self.command {
             RepoCommand::Init {} => self.init(config),
             RepoCommand::Sync {} => self.sync(),
             RepoCommand::Clone { .. } => self.clone(progress, config),
+            RepoCommand::Destroy {} => self.destroy(progress, args, config),
         }
     }
 }
@@ -52,7 +61,7 @@ impl Repo {
             .ok_or_eyre("no datadir specified")?
             .join("repo");
 
-        std::fs::create_dir_all(&target_folder)?;
+        fs::create_dir_all(&target_folder)?;
 
         ThreadSafeRepository::init(
             target_folder,
@@ -89,7 +98,7 @@ impl Repo {
         let gix_url = gix::Url::try_from(url.as_str())?;
         clone_progress.inc();
 
-        std::fs::create_dir_all(&target_folder)?;
+        fs::create_dir_all(&target_folder)?;
         clone_progress.inc();
 
         let mut fetch = PrepareFetch::new(
@@ -113,4 +122,55 @@ impl Repo {
 
         Ok(())
     }
+
+    fn destroy(&self, progress: Arc<Root>, args: &Cli, config: Config) -> Result<()> {
+        let mode = Mode::with_throughput().and_percentage();
+        let files = prodash::unit::label_and_mode("files", mode);
+
+        let mut destroy_progress = progress.add_child("destroying repo");
+        destroy_progress.init(Some(0), Some(files));
+
+        ensure!(
+            args.force,
+            "This operation is destructive and requires `--force` to be present"
+        );
+
+        let target_folder = config
+            .data_dir
+            .ok_or_eyre("no datadir specified")?
+            .join("repo");
+
+        remove_folder(target_folder, &mut destroy_progress)?;
+
+        destroy_progress.done("destroyed".into());
+        sleep(Duration::from_millis(500));
+
+        Ok(())
+    }
+}
+
+fn remove_folder<P>(folder: PathBuf, progress: &mut P) -> Result<()>
+where
+    P: NestedProgress,
+    P::SubProgress: 'static,
+{
+    let files: Vec<_> = fs::read_dir(&folder)?.collect();
+    let new_max = progress.max().unwrap_or(0) + files.len();
+    progress.set_max(Some(new_max));
+
+    for p in files {
+        let p = p?;
+
+        if p.file_type()?.is_dir() {
+            remove_folder(p.path(), progress)?;
+        } else {
+            fs::remove_file(p.path())?;
+            progress.inc();
+        }
+    }
+
+    fs::remove_dir(folder)?;
+    progress.inc();
+
+    Ok(())
 }

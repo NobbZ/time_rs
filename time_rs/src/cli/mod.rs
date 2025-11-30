@@ -8,7 +8,7 @@ use clap::{Parser, Subcommand};
 
 pub mod commands;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Default)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// Basefolder to use for data, can be influenced by `XDG_DATA_HOME`.
@@ -18,6 +18,10 @@ pub struct Cli {
     /// Basefolder to use for config, can be influenced by `XDG_CONFIG_HOME`.
     #[arg(long, short, global = true)]
     pub config_dir: Option<PathBuf>,
+
+    /// Enforces a given operation, even if it is destructive
+    #[arg(long, global = true, default_value_t = false)]
+    pub force: bool,
 
     #[command(subcommand)]
     pub command: Option<Commands>,

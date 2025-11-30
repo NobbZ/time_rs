@@ -7,6 +7,7 @@ use std::sync::Arc;
 use eyre::Result;
 use prodash::tree::Root;
 
+use crate::cli::Cli;
 use crate::config::Config;
 
 mod repo;
@@ -23,5 +24,5 @@ pub use summary::Summary;
 
 /// Common interface to run subcommands from the CLI.
 pub trait Command {
-    fn run(&self, progress_root: Arc<Root>, config: Config) -> Result<()>;
+    fn run(&self, progress_root: Arc<Root>, args: &Cli, config: Config) -> Result<()>;
 }

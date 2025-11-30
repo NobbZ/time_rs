@@ -8,7 +8,7 @@ use clap::Args;
 use eyre::Result;
 use prodash::tree::Root;
 
-use crate::config::Config;
+use crate::{cli::Cli, config::Config};
 
 use super::Command;
 
@@ -16,7 +16,7 @@ use super::Command;
 pub struct Status {}
 
 impl Command for Status {
-    fn run(&self, _progress: Arc<Root>, _config: Config) -> Result<()> {
+    fn run(&self, _progress: Arc<Root>, _args: &Cli, _config: Config) -> Result<()> {
         Ok(())
     }
 }
