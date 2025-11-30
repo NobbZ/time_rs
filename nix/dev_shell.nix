@@ -14,6 +14,7 @@
   pkg-config,
   openssl,
   bacon,
+  cue,
 }: let
   rustWithExtensions = rust.override {
     extensions = [
@@ -37,5 +38,6 @@ in
       nil
       pkg-config
       openssl
+      cue
     ];
   }
