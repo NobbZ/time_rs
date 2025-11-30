@@ -14,7 +14,7 @@ _steps: {
 		uses: "actions/checkout@v6"
 	}
 	installNix: {
-		uses: "cachix/install-nix-action@v30"
+		uses: "cachix/install-nix-action@v31"
 		with: {
 			install_url: "https://releases.nixos.org/nix/nix-\(nixVersion)/install"
 			extra_nix_config: """
