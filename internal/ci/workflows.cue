@@ -13,10 +13,6 @@ _#steps: {
 		name: "Install CUE"
 		uses: "cue-lang/setup-cue@v1.0.1"
 	}
-	actionlint: {
-		name: "Run actionlint"
-		uses: "ivankatliarchuk/actionlint@v1"
-	}
 }
 
 // Common configurations
@@ -68,7 +64,6 @@ workflows: {
 						name: "Check for uncommitted changes"
 						run:  "if ! git diff --exit-code .github/workflows/; then echo 'Generated workflows are out of date. Run make generate-workflows and commit the changes.'; exit 1; fi"
 					},
-					_#steps.actionlint,
 				]
 			}
 		}

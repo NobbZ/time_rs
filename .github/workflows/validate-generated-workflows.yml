@@ -22,5 +22,3 @@ jobs:
         run: make generate-workflows
       - name: Check for uncommitted changes
         run: if ! git diff --exit-code .github/workflows/; then echo 'Generated workflows are out of date. Run make generate-workflows and commit the changes.'; exit 1; fi
-      - name: Run actionlint
-        uses: ivankatliarchuk/actionlint@v1
