@@ -182,23 +182,26 @@ mod tests {
     use assert_fs::prelude::*;
     use figment::Figment;
     use prodash::tree::root::Options;
+    use rstest::*;
 
     use super::*;
     use crate::cli::Commands;
 
-    fn create_progress() -> Arc<Root> {
+    #[fixture]
+    fn progress() -> Arc<Root> {
         Options::default().create().into()
     }
 
-    fn create_cli_args(repo: Repo) -> Cli {
+    #[fixture]
+    fn cli_args(#[default(RepoCommand::Init {})] command: RepoCommand) -> Cli {
         Cli {
-            command: Some(Commands::Repo(repo)),
+            command: Some(Commands::Repo(Repo { command })),
             ..Default::default()
         }
     }
 
-    #[test]
-    fn clone_fails_without_data_dir() {
+    #[rstest]
+    fn clone_fails_without_data_dir(progress: Arc<Root>) {
         let repo = Repo {
             command: RepoCommand::Clone {
                 url: "https://github.com/NobbZ/time_rs".to_string(),
@@ -207,8 +210,7 @@ mod tests {
 
         let figment = Figment::new(); // No data_dir specified
         let config: Config = figment.try_into().unwrap();
-        let progress = create_progress();
-        let cli_args = create_cli_args(Clone::clone(&repo));
+        let cli_args = cli_args(Clone::clone(&repo.command));
 
         let result = repo.run(progress, &cli_args, config);
 
@@ -219,8 +221,8 @@ mod tests {
             .contains("no datadir specified"));
     }
 
-    #[test]
-    fn clone_fails_with_invalid_url() {
+    #[rstest]
+    fn clone_fails_with_invalid_url(progress: Arc<Root>) {
         let tmp = assert_fs::TempDir::new().unwrap();
 
         let repo = Repo {
@@ -231,16 +233,15 @@ mod tests {
 
         let figment = Figment::new().merge(("data_dir", tmp.path().to_str().unwrap()));
         let config: Config = figment.try_into().unwrap();
-        let progress = create_progress();
-        let cli_args = create_cli_args(Clone::clone(&repo));
+        let cli_args = cli_args(Clone::clone(&repo.command));
 
         let result = repo.run(progress, &cli_args, config);
 
         assert!(result.is_err());
     }
 
-    #[test]
-    fn clone_fails_when_destination_not_empty() {
+    #[rstest]
+    fn clone_fails_when_destination_not_empty(progress: Arc<Root>) {
         let tmp = assert_fs::TempDir::new().unwrap();
 
         // Create the repo directory with some content to make it non-empty
@@ -257,8 +258,7 @@ mod tests {
 
         let figment = Figment::new().merge(("data_dir", tmp.path().to_str().unwrap()));
         let config: Config = figment.try_into().unwrap();
-        let progress = create_progress();
-        let cli_args = create_cli_args(Clone::clone(&repo));
+        let cli_args = cli_args(Clone::clone(&repo.command));
 
         let result = repo.run(progress, &cli_args, config);
 
@@ -266,8 +266,8 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[test]
-    fn init_succeeds_with_empty_directory() {
+    #[rstest]
+    fn init_succeeds_with_empty_directory(progress: Arc<Root>) {
         let tmp = assert_fs::TempDir::new().unwrap();
 
         let repo = Repo {
@@ -276,8 +276,7 @@ mod tests {
 
         let figment = Figment::new().merge(("data_dir", tmp.path().to_str().unwrap()));
         let config: Config = figment.try_into().unwrap();
-        let progress = create_progress();
-        let cli_args = create_cli_args(Clone::clone(&repo));
+        let cli_args = cli_args(Clone::clone(&repo.command));
 
         let result = repo.run(progress, &cli_args, config);
 
