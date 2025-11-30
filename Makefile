@@ -25,14 +25,10 @@ check:
 $(WORKFLOWS_DIR):
 	@mkdir -p $@
 
-$(WORKFLOW_CI): $(CUE_SRC) | $(WORKFLOWS_DIR)
-	printf '$(SPDX_HEADER)' > $@
-	cue export --out yaml ./internal/ci/ -e 'workflows."ci.yml"' >> $@
+define generate-workflow
+$(WORKFLOWS_DIR)/$(1): $(CUE_SRC) | $(WORKFLOWS_DIR)
+	printf '$$(SPDX_HEADER)' > $$@
+	cue export --out yaml ./internal/ci/ -e 'workflows."$(1)"' >> $$@
+endef
 
-$(WORKFLOW_VALIDATE): $(CUE_SRC) | $(WORKFLOWS_DIR)
-	printf '$(SPDX_HEADER)' > $@
-	cue export --out yaml ./internal/ci/ -e 'workflows."validate-generated-workflows.yml"' >> $@
-
-$(WORKFLOW_COMMIT_CHECKS): $(CUE_SRC) | $(WORKFLOWS_DIR)
-	printf '$(SPDX_HEADER)' > $@
-	cue export --out yaml ./internal/ci/ -e 'workflows."commit_checks.yml"' >> $@
+$(foreach wf,ci.yml validate-generated-workflows.yml commit_checks.yml,$(eval $(call generate-workflow,$(wf))))
