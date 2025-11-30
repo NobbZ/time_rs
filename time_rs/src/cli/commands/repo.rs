@@ -194,6 +194,13 @@ mod tests {
         }
     }
 
+    #[fixture]
+    fn destroy_repo() -> Repo {
+        Repo {
+            command: RepoCommand::Destroy {},
+        }
+    }
+
     #[rstest]
     fn clone_fails_without_data_dir(progress: Arc<Root>) {
         let repo = Repo {
@@ -276,5 +283,75 @@ mod tests {
 
         assert!(result.is_ok());
         assert!(tmp.child("repo").exists());
+    }
+
+    #[rstest]
+    fn destroy_fails_without_force_flag(destroy_repo: Repo, progress: Arc<prodash::tree::Root>) {
+        let temp = assert_fs::TempDir::new().unwrap();
+        let figment = Figment::new().merge(("data_dir", temp.path().to_str().unwrap()));
+        let cli_args = Cli {
+            command: Some(Commands::Repo(Repo {
+                command: RepoCommand::Destroy {},
+            })),
+            force: false,
+            ..Default::default()
+        };
+        let config = figment.try_into().unwrap();
+
+        let result = destroy_repo.run(progress, &cli_args, config);
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("requires `--force` to be present"));
+    }
+
+    #[rstest]
+    fn destroy_succeeds_with_force_flag(destroy_repo: Repo, progress: Arc<prodash::tree::Root>) {
+        let temp = assert_fs::TempDir::new().unwrap();
+        // Create a repo folder with some content
+        let repo_dir = temp.child("repo");
+        repo_dir.create_dir_all().unwrap();
+        repo_dir.child("test_file.txt").touch().unwrap();
+        repo_dir.child("nested").create_dir_all().unwrap();
+        repo_dir.child("nested/inner.txt").touch().unwrap();
+
+        let figment = Figment::new().merge(("data_dir", temp.path().to_str().unwrap()));
+        let cli_args = Cli {
+            command: Some(Commands::Repo(Repo {
+                command: RepoCommand::Destroy {},
+            })),
+            force: true,
+            ..Default::default()
+        };
+        let config = figment.try_into().unwrap();
+
+        let result = destroy_repo.run(progress, &cli_args, config);
+
+        assert!(result.is_ok());
+        assert!(!repo_dir.exists());
+    }
+
+    #[rstest]
+    fn destroy_fails_when_repo_folder_does_not_exist(
+        destroy_repo: Repo,
+        progress: Arc<prodash::tree::Root>,
+    ) {
+        let temp = assert_fs::TempDir::new().unwrap();
+        // Don't create repo folder - it should fail when trying to read the directory
+
+        let figment = Figment::new().merge(("data_dir", temp.path().to_str().unwrap()));
+        let cli_args = Cli {
+            command: Some(Commands::Repo(Repo {
+                command: RepoCommand::Destroy {},
+            })),
+            force: true,
+            ..Default::default()
+        };
+        let config = figment.try_into().unwrap();
+
+        let result = destroy_repo.run(progress, &cli_args, config);
+
+        // The operation should fail because the repo folder doesn't exist
+        assert!(result.is_err());
     }
 }
