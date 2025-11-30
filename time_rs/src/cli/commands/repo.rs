@@ -210,7 +210,7 @@ mod tests {
 
         let figment = Figment::new(); // No data_dir specified
         let config: Config = figment.try_into().unwrap();
-        let cli_args = cli_args(Clone::clone(&repo.command));
+        let cli_args = cli_args(repo.command.clone());
 
         let result = repo.run(progress, &cli_args, config);
 
@@ -233,7 +233,7 @@ mod tests {
 
         let figment = Figment::new().merge(("data_dir", tmp.path().to_str().unwrap()));
         let config: Config = figment.try_into().unwrap();
-        let cli_args = cli_args(Clone::clone(&repo.command));
+        let cli_args = cli_args(repo.command.clone());
 
         let result = repo.run(progress, &cli_args, config);
 
@@ -258,7 +258,7 @@ mod tests {
 
         let figment = Figment::new().merge(("data_dir", tmp.path().to_str().unwrap()));
         let config: Config = figment.try_into().unwrap();
-        let cli_args = cli_args(Clone::clone(&repo.command));
+        let cli_args = cli_args(repo.command.clone());
 
         let result = repo.run(progress, &cli_args, config);
 
@@ -276,7 +276,7 @@ mod tests {
 
         let figment = Figment::new().merge(("data_dir", tmp.path().to_str().unwrap()));
         let config: Config = figment.try_into().unwrap();
-        let cli_args = cli_args(Clone::clone(&repo.command));
+        let cli_args = cli_args(repo.command.clone());
 
         let result = repo.run(progress, &cli_args, config);
 
