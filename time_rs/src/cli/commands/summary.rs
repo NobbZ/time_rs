@@ -2,10 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
+use std::sync::Arc;
+
 use clap::Args;
 use eyre::Result;
+use prodash::tree::Root;
 
-use crate::config::Config;
+use crate::{cli::Cli, config::Config};
 
 use super::Command;
 
@@ -13,7 +16,7 @@ use super::Command;
 pub struct Summary {}
 
 impl Command for Summary {
-    fn run(&self, _config: Config) -> Result<()> {
+    fn run(&self, _progress: Arc<Root>, _args: &Cli, _config: Config) -> Result<()> {
         Ok(())
     }
 }
