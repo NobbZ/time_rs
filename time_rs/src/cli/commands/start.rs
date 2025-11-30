@@ -8,7 +8,7 @@ use clap::Args;
 use eyre::Result;
 use prodash::tree::Root;
 
-use crate::config::Config;
+use crate::{cli::Cli, config::Config};
 
 use super::Command;
 
@@ -16,7 +16,7 @@ use super::Command;
 pub struct Start {}
 
 impl Command for Start {
-    fn run(&self, _progress: Arc<Root>, _config: Config) -> Result<()> {
+    fn run(&self, _progress: Arc<Root>, _args: &Cli, _config: Config) -> Result<()> {
         Ok(())
     }
 }
@@ -28,16 +28,22 @@ mod tests {
     use figment::Figment;
     use prodash::tree::root::Options;
 
+    use crate::cli::Commands;
+
     use super::*;
 
     #[test]
     fn basic_operation_succeeds() -> Result<()> {
         let start = Start {};
         let figment = Figment::new().merge(("data_dir", "/"));
+        let cli_args = Cli {
+            command: Some(Commands::Start(Start {})),
+            ..Default::default()
+        };
         let config = figment.try_into()?;
         let progress: Arc<_> = Options::default().create().into();
 
-        let result = start.run(progress, config);
+        let result = start.run(progress, &cli_args, config);
 
         assert!(result.is_ok());
 
