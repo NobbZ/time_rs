@@ -42,6 +42,7 @@ The project has strict clippy warnings enabled:
 
 - Use `rstest` for parameterized tests
 - Use `rstest_reuse` for reusable test fixtures
+- Prefer rstest fixtures and templates whenever possible and sensible for test setup and data sharing
 - Use `assert_fs` for filesystem-related test assertions
 - Test files should be placed alongside source files or in a `tests/` directory
 
