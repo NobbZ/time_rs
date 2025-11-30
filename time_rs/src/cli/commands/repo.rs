@@ -466,12 +466,10 @@ mod tests {
 
         assert!(result.is_ok());
         assert!(!test_dir.path().exists());
-        // Progress should have been updated for:
-        // - 2 entries at root (file1.txt and sub/)
-        // - 1 entry in sub/ (file2.txt)
-        // - Each directory removal (sub/ and progress_test/)
-        // - Each file removal (file1.txt and file2.txt)
-        // Total max should be 3 (2 root entries + 1 sub entry)
+        // Progress max counts each entry when read_dir() is called on a directory:
+        // - Root folder (progress_test/) has 2 entries: file1.txt and sub/
+        // - Subdirectory (sub/) has 1 entry: file2.txt
+        // Total max = 2 + 1 = 3
         assert_eq!(destroy_progress.max(), Some(3));
 
         Ok(())
