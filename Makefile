@@ -2,7 +2,7 @@ CUE_DIR := internal/ci
 WORKFLOWS_DIR := .github/workflows
 CUE_SRC := $(wildcard $(CUE_DIR)/*.cue)
 
-SPDX_HEADER := \# SPDX-FileCopyrightText: 2025 Norbert Melzer <timmelzer@gmail.com>\n\#\n\# SPDX-License-Identifier: CC0-1.0\n\n\# This file is generated from internal/ci/\n\# Do not edit directly. Run make generate-workflows to regenerate.\n\n
+SPDX_HEADER := \# SPDX-FileCopyrightText: 2025 Norbert Melzer <timmelzer@gmail.com>\n\#\n\# SPDX-License-Identifier: CC0-1.0\n\n\# This file is generated from internal/ci/\n\# Do not edit directly. Run make workflows to regenerate.\n\n
 
 # Generated workflow files
 WORKFLOW_CI := $(WORKFLOWS_DIR)/ci.yml
