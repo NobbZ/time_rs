@@ -166,7 +166,7 @@ mod tests {
     ) {
         let (_tmp, _path, figment, _name) = figment_data;
 
-        let md = dbg!(figment.metadata().next().unwrap());
+        let md = figment.metadata().next().unwrap();
 
         assert_eq!(md_name, md.name);
     }
@@ -178,7 +178,7 @@ mod tests {
     ) {
         let (_tmp, path, figment, name) = figment_data;
 
-        let md = dbg!(figment.metadata().next().unwrap());
+        let md = figment.metadata().next().unwrap();
 
         let src_name = md
             .source
