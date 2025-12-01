@@ -17,6 +17,30 @@ pub struct Stop {}
 
 impl Command for Stop {
     fn run(&self, _progress: Arc<Root>, _args: &Cli, _config: Config) -> Result<()> {
-        todo!()
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cli::commands::Command;
+    use crate::cli::Cli;
+    use crate::config::Config;
+    use prodash::tree::Root;
+    use std::sync::Arc;
+    use assert_fs::prelude::*;
+    use predicates::prelude::*;
+
+    #[test]
+    fn test_stop_run() {
+        let temp = assert_fs::TempDir::new().unwrap();
+        let home_dir = temp.path().to_path_buf();
+        let cli = Cli::default();
+        let config = Config::load(vec![home_dir]).unwrap();
+        let progress = Arc::new(Root::new());
+        let stop = Stop {};
+        let result = stop.run(Arc::clone(&progress), &cli, config);
+        assert!(result.is_ok());
     }
 }

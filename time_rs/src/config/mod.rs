@@ -212,4 +212,12 @@ mod tests {
 
         assert_eq!(Some(PathBuf::from("/tmp")), cfg.data_dir)
     }
+
+    #[test]
+    fn test_add_data_dir() {
+        let mut config = Config::load(vec![]).unwrap();
+        let path = PathBuf::from("/new/data/dir");
+        config.add_data_dir(path.clone()).unwrap();
+        assert_eq!(config.data_dir, Some(path));
+    }
 }

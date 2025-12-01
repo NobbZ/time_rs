@@ -20,3 +20,27 @@ impl Command for Status {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cli::commands::Command;
+    use crate::cli::Cli;
+    use crate::config::Config;
+    use prodash::tree::Root;
+    use std::sync::Arc;
+    use assert_fs::prelude::*;
+    use predicates::prelude::*;
+
+    #[test]
+    fn test_status_run() {
+        let temp = assert_fs::TempDir::new().unwrap();
+        let home_dir = temp.path().to_path_buf();
+        let cli = Cli::default();
+        let config = Config::load(vec![home_dir]).unwrap();
+        let progress = Arc::new(Root::new());
+        let status = Status {};
+        let result = status.run(Arc::clone(&progress), &cli, config);
+        assert!(result.is_ok());
+    }
+}
