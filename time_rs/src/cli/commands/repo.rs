@@ -81,10 +81,8 @@ impl Repo {
         let fetch_progress = clone_progress.add_child("fetch");
         let checout_progress = clone_progress.add_child("checkout");
 
-        let target_folder = config
-            .data_dir
-            .ok_or_eyre("no datadir specified")?
-            .join("repo");
+        let data_dir = config.data_dir.ok_or_eyre("no datadir specified")?;
+        let target_folder = data_dir.join("repo");
 
         let RepoCommand::Clone { ref url } = self.command else {
             unreachable!("RepoCommand in clone");
@@ -92,7 +90,7 @@ impl Repo {
         let gix_url = gix::Url::try_from(url.as_str())?;
         clone_progress.inc();
 
-        fs::create_dir_all(&target_folder)?;
+        fs::create_dir_all(&data_dir)?;
         clone_progress.inc();
 
         let mut fetch = PrepareFetch::new(
@@ -467,5 +465,46 @@ mod tests {
         assert_eq!(destroy_progress.max(), Some(3));
 
         Ok(())
+    }
+
+    #[rstest]
+    fn sync_succeeds(progress: Arc<Root>) {
+        let repo = Repo {
+            command: RepoCommand::Sync {},
+        };
+
+        let figment = Figment::new();
+        let config: Config = figment.try_into().unwrap();
+        let cli_args = cli_args(repo.command.clone());
+
+        let result = repo.run(progress, &cli_args, config);
+
+        assert!(result.is_ok());
+    }
+
+    #[rstest]
+    #[ignore = "Requires SSH credentials - run with --ignored if you have SSH keys configured"]
+    fn clone_succeeds(progress: Arc<Root>) {
+        let tmp = assert_fs::TempDir::new().unwrap();
+
+        let repo = Repo {
+            command: RepoCommand::Clone {
+                url: "git@github.com:git-fixtures/basic".to_string(),
+            },
+        };
+
+        let figment = Figment::new().merge(("data_dir", tmp.path().to_str().unwrap()));
+        let config: Config = figment.try_into().unwrap();
+        let cli_args = cli_args(repo.command.clone());
+
+        let result = repo.run(progress, &cli_args, config);
+
+        if let Err(e) = &result {
+            eprintln!("{:?}", e);
+        }
+
+        assert!(result.is_ok());
+        assert!(tmp.child("repo").exists());
+        assert!(tmp.child("repo/.git").exists());
     }
 }
