@@ -2,13 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-use std::{
-    fs,
-    path::PathBuf,
-    sync::Arc,
-    thread::sleep,
-    time::{Duration, Instant},
-};
+use std::{fs, path::PathBuf, sync::Arc, thread::sleep, time::Duration};
 
 use clap::{Args, Subcommand};
 use eyre::{ensure, OptionExt, Result};
