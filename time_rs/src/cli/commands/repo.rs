@@ -483,6 +483,7 @@ mod tests {
     }
 
     #[rstest]
+    #[ignore = "Requires SSH credentials - run with --ignored if you have SSH keys configured"]
     fn clone_succeeds(progress: Arc<Root>) {
         let tmp = assert_fs::TempDir::new().unwrap();
 

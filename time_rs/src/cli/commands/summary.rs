@@ -29,8 +29,6 @@ mod tests {
     use crate::config::Config;
     use prodash::tree::Root;
     use std::sync::Arc;
-    use assert_fs::prelude::*;
-    use predicates::prelude::*;
 
     #[test]
     fn test_summary_run() {
