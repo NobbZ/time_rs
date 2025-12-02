@@ -483,13 +483,12 @@ mod tests {
     }
 
     #[rstest]
-    #[ignore = "Requires SSH credentials - run with --ignored if you have SSH keys configured"]
     fn clone_succeeds(progress: Arc<Root>) {
         let tmp = assert_fs::TempDir::new().unwrap();
 
         let repo = Repo {
             command: RepoCommand::Clone {
-                url: "git@github.com:git-fixtures/basic".to_string(),
+                url: "https://github.com/git-fixtures/basic".to_string(),
             },
         };
 

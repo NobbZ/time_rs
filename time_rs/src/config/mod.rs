@@ -156,6 +156,8 @@ mod tests {
     ) {
         let (_tmp, _path, figment, _name) = figment_data;
 
+        // 1. the read config file
+        // 2. the implied defaults
         assert_eq!(2, figment.metadata().count());
     }
 
@@ -166,7 +168,7 @@ mod tests {
     ) {
         let (_tmp, _path, figment, _name) = figment_data;
 
-        let md = dbg!(figment.metadata().next().unwrap());
+        let md = figment.metadata().next().unwrap();
 
         assert_eq!(md_name, md.name);
     }
@@ -178,7 +180,7 @@ mod tests {
     ) {
         let (_tmp, path, figment, name) = figment_data;
 
-        let md = dbg!(figment.metadata().next().unwrap());
+        let md = figment.metadata().next().unwrap();
 
         let src_name = md
             .source
@@ -219,5 +221,21 @@ mod tests {
         let path = PathBuf::from("/new/data/dir");
         config.add_data_dir(path.clone()).unwrap();
         assert_eq!(config.data_dir, Some(path));
+    }
+
+    #[test]
+    fn test_unknown_file_extension() {
+        let tmpdir = TempDir::new().unwrap();
+        tmpdir.child("foo.txt").touch().unwrap();
+
+        let config = Config::load(vec![tmpdir.to_path_buf()]);
+
+        assert!(config.is_err());
+        let err = config.unwrap_err();
+        let mut chain = err.chain();
+
+        assert_eq!("loading config", chain.next().unwrap().to_string());
+        assert_eq!("unknown extension txt", chain.next().unwrap().to_string());
+        assert!(chain.next().is_none());
     }
 }
