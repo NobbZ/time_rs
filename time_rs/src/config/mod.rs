@@ -156,6 +156,8 @@ mod tests {
     ) {
         let (_tmp, _path, figment, _name) = figment_data;
 
+        // 1. the read config file
+        // 2. the implied defaults
         assert_eq!(2, figment.metadata().count());
     }
 
