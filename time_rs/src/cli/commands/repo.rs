@@ -5,7 +5,6 @@
 use std::{fs, path::PathBuf, sync::Arc, thread::sleep, time::Duration};
 
 use clap::{Args, Subcommand};
-use eyre::{ensure, OptionExt, Result};
 use gix::{
     clone::PrepareFetch,
     create::{Kind, Options},
@@ -13,8 +12,11 @@ use gix::{
 };
 use prodash::{tree::Root, unit::display::Mode};
 
-use super::Command;
+pub use self::error::Error;
+use super::{Command, Result};
 use crate::{cli::Cli, config::Config};
+
+pub mod error;
 
 #[derive(Debug, PartialEq, Eq, Args, Clone)]
 pub struct Repo {
@@ -52,10 +54,10 @@ impl Repo {
     fn init(&self, config: Config) -> Result<()> {
         let target_folder = config
             .data_dir
-            .ok_or_eyre("no datadir specified")?
+            .ok_or_else(|| Error::NoDataDir)?
             .join("repo");
 
-        fs::create_dir_all(&target_folder)?;
+        fs::create_dir_all(&target_folder).map_err(Error::Io)?;
 
         ThreadSafeRepository::init(
             target_folder,
@@ -64,7 +66,8 @@ impl Repo {
                 destination_must_be_empty: true,
                 ..Options::default()
             },
-        )?;
+        )
+        .map_err(|e| Error::GixInit(Box::new(e)))?;
 
         Ok(())
     }
@@ -79,18 +82,19 @@ impl Repo {
         let mut clone_progress = progress.add_child("clone");
         clone_progress.init(Some(4), Some(steps));
         let fetch_progress = clone_progress.add_child("fetch");
-        let checout_progress = clone_progress.add_child("checkout");
+        let checkout_progress = clone_progress.add_child("checkout");
 
-        let data_dir = config.data_dir.ok_or_eyre("no datadir specified")?;
+        let data_dir = config.data_dir.ok_or_else(|| Error::NoDataDir)?;
         let target_folder = data_dir.join("repo");
 
         let RepoCommand::Clone { ref url } = self.command else {
             unreachable!("RepoCommand in clone");
         };
-        let gix_url = gix::Url::try_from(url.as_str())?;
+        let gix_url =
+            gix::Url::try_from(url.as_str()).map_err(|e| Error::GixUrlParse(e, url.to_string()))?;
         clone_progress.inc();
 
-        fs::create_dir_all(&data_dir)?;
+        fs::create_dir_all(&data_dir).map_err(Error::Io)?;
         clone_progress.inc();
 
         let mut fetch = PrepareFetch::new(
@@ -102,14 +106,17 @@ impl Repo {
                 ..Options::default()
             },
             Default::default(),
-        )?;
+        )
+        .map_err(|e| Error::GixClone(Box::new(e)))?;
 
-        let (mut checkout, _fetch_outcome) =
-            fetch.fetch_then_checkout(fetch_progress, &gix::interrupt::IS_INTERRUPTED)?;
+        let (mut checkout, _fetch_outcome) = fetch
+            .fetch_then_checkout(fetch_progress, &gix::interrupt::IS_INTERRUPTED)
+            .map_err(|e| Error::GixFetch(Box::new(e)))?;
         clone_progress.inc();
 
-        let (_repo, _checkout_outcome) =
-            checkout.main_worktree(checout_progress, &gix::interrupt::IS_INTERRUPTED)?;
+        let (_repo, _checkout_outcome) = checkout
+            .main_worktree(checkout_progress, &gix::interrupt::IS_INTERRUPTED)
+            .map_err(|e| Error::GixCheckout(Box::new(e)))?;
         clone_progress.inc();
 
         Ok(())
@@ -122,14 +129,13 @@ impl Repo {
         let mut destroy_progress = progress.add_child("destroying repo");
         destroy_progress.init(Some(0), Some(files));
 
-        ensure!(
-            args.force,
-            "This operation is destructive and requires `--force` to be present"
-        );
+        if !args.force {
+            return Err(Error::DestructiveOperation("repo destroy".to_string()).into());
+        }
 
         let target_folder = config
             .data_dir
-            .ok_or_eyre("no datadir specified")?
+            .ok_or_else(|| Error::NoDataDir)?
             .join("repo");
 
         remove_folder(target_folder, &mut destroy_progress)?;
@@ -146,22 +152,22 @@ where
     P: NestedProgress,
     P::SubProgress: 'static,
 {
-    let files: Vec<_> = fs::read_dir(&folder)?.collect();
+    let files: Vec<_> = fs::read_dir(&folder).map_err(Error::Io)?.collect();
     let new_max = progress.max().unwrap_or(0) + files.len();
     progress.set_max(Some(new_max));
 
     for p in files {
-        let p = p?;
+        let p = p.map_err(Error::Io)?;
 
-        if p.file_type()?.is_dir() {
+        if p.file_type().map_err(Error::Io)?.is_dir() {
             remove_folder(p.path(), progress)?;
         } else {
-            fs::remove_file(p.path())?;
+            fs::remove_file(p.path()).map_err(Error::Io)?;
             progress.inc();
         }
     }
 
-    fs::remove_dir(folder)?;
+    fs::remove_dir(folder).map_err(Error::Io)?;
     progress.inc();
 
     Ok(())
@@ -177,6 +183,7 @@ mod tests {
     use rstest::*;
 
     use super::*;
+    use crate::cli::commands::Error as CommandError;
     use crate::cli::Commands;
 
     #[fixture]
@@ -213,11 +220,7 @@ mod tests {
 
         let result = repo.run(progress, &cli_args, config);
 
-        assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("no datadir specified"));
+        assert!(matches!(result, Err(CommandError::Repo(Error::NoDataDir))));
     }
 
     #[rstest]
@@ -298,9 +301,11 @@ mod tests {
 
         let result = destroy_repo.run(progress, &cli_args, config);
 
-        assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err.to_string().contains("requires `--force` to be present"));
+        assert!(matches!(
+            err,
+            CommandError::Repo(Error::DestructiveOperation(_operation))
+        ));
     }
 
     #[rstest]
@@ -354,7 +359,7 @@ mod tests {
     }
 
     #[test]
-    fn remove_folder_empty_directory() -> Result<()> {
+    fn remove_folder_empty_directory() -> eyre::Result<()> {
         let tmp = assert_fs::TempDir::new()?;
         let test_dir = tmp.child("empty_dir");
         test_dir.create_dir_all()?;
@@ -374,7 +379,7 @@ mod tests {
     }
 
     #[test]
-    fn remove_folder_with_files() -> Result<()> {
+    fn remove_folder_with_files() -> eyre::Result<()> {
         let tmp = assert_fs::TempDir::new()?;
         let test_dir = tmp.child("dir_with_files");
         test_dir.create_dir_all()?;
@@ -396,7 +401,7 @@ mod tests {
     }
 
     #[test]
-    fn remove_folder_nested_directories() -> Result<()> {
+    fn remove_folder_nested_directories() -> eyre::Result<()> {
         let tmp = assert_fs::TempDir::new()?;
         let test_dir = tmp.child("nested");
         test_dir.create_dir_all()?;
@@ -433,7 +438,7 @@ mod tests {
     }
 
     #[test]
-    fn remove_folder_updates_progress_correctly() -> Result<()> {
+    fn remove_folder_updates_progress_correctly() -> eyre::Result<()> {
         let tmp = assert_fs::TempDir::new()?;
         let test_dir = tmp.child("progress_test");
         test_dir.create_dir_all()?;
