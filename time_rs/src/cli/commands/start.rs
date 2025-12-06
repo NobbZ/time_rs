@@ -5,12 +5,12 @@
 use std::sync::Arc;
 
 use clap::Args;
-use eyre::Result;
 use prodash::tree::Root;
 
 use crate::{cli::Cli, config::Config};
 
 use super::Command;
+use super::Result;
 
 #[derive(Debug, PartialEq, Eq, Args)]
 pub struct Start {}
@@ -33,7 +33,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn basic_operation_succeeds() -> Result<()> {
+    fn basic_operation_succeeds() -> eyre::Result<()> {
         let start = Start {};
         let figment = Figment::new().merge(("data_dir", "/"));
         let cli_args = Cli {

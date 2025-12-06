@@ -5,12 +5,12 @@
 use std::sync::Arc;
 
 use clap::Args;
-use eyre::Result;
 use prodash::tree::Root;
 
 use crate::{cli::Cli, config::Config};
 
 use super::Command;
+use super::Result;
 
 #[derive(Debug, PartialEq, Eq, Args)]
 pub struct Status {}

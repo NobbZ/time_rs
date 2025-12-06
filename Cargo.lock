@@ -2829,6 +2829,7 @@ dependencies = [
  "rstest_reuse",
  "serde",
  "shellexpand",
+ "thiserror 2.0.17",
 ]
 
 [[package]]

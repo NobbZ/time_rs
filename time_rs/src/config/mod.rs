@@ -7,12 +7,17 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use eyre::{eyre, Context, Ok, Result};
 use figment::{
     providers::{Format, Json, Toml, Yaml},
     Figment,
 };
 use serde::Deserialize;
+
+pub use crate::config::error::Error;
+
+pub mod error;
+
+type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -32,11 +37,11 @@ impl Config {
             .map(|p| {
                 p.to_str()
                     .map(|s| s.to_string())
-                    .ok_or_else(|| eyre!("converting path {:?} to string", p))
+                    .ok_or_else(|| Error::PathStringConversion(p.clone()))
             })
             .flat_map(|s| {
                 let s = s?;
-                glob::glob(&s).wrap_err_with(|| format!("creating glob from {}", s))
+                glob::glob(&s).map_err(|e| Error::PatternError(s.clone(), e))
             })
             .flatten()
             .map(|f| {
@@ -47,15 +52,15 @@ impl Config {
                     Some("yaml" | "yml") => Ok(Figment::from(Yaml::file(file).nested())),
                     Some("toml") => Ok(Figment::from(Toml::file(file).nested())),
                     Some("json") => Ok(Figment::from(Json::file(file).nested())),
-                    Some(ext) => Err(eyre!("unknown extension {}", ext)),
-                    None => Err(eyre!("no extension found")),
+                    Some(ext) => Err(Error::UnknownExtension(file.clone(), ext.to_owned())),
+                    None => Err(Error::NoExtension(file.clone())),
                 }
             })
             .try_fold(figment, |acc, additional| Ok(acc.merge(additional?)))
     }
 
     pub fn load(paths: Vec<PathBuf>) -> Result<Self> {
-        let figment = Self::load_figment(paths).wrap_err("loading config")?;
+        let figment = Self::load_figment(paths).map_err(|e| Error::LoadingConfig(Box::new(e)))?;
 
         figment.try_into()
     }
@@ -68,7 +73,7 @@ impl Config {
             "data_dir",
             path.as_ref()
                 .to_str()
-                .ok_or_else(|| eyre!("Can not convert {:?} to string", path))?,
+                .ok_or_else(|| Error::PathStringConversion(path.as_ref().to_owned()))?,
         ));
 
         *self = figment.clone().try_into()?;
@@ -78,12 +83,12 @@ impl Config {
 }
 
 impl TryFrom<Figment> for Config {
-    type Error = eyre::Report;
+    type Error = Error;
 
     fn try_from(figment: Figment) -> Result<Self> {
         Ok(Config {
             figment: figment.clone(),
-            ..figment.extract().wrap_err("extracting config")?
+            ..figment.extract().map_err(Box::new)?
         })
     }
 }
@@ -232,10 +237,13 @@ mod tests {
 
         assert!(config.is_err());
         let err = config.unwrap_err();
-        let mut chain = err.chain();
 
-        assert_eq!("loading config", chain.next().unwrap().to_string());
-        assert_eq!("unknown extension txt", chain.next().unwrap().to_string());
-        assert!(chain.next().is_none());
+        match err {
+            Error::LoadingConfig(ref inner) => match &**inner {
+                Error::UnknownExtension(_, ref ext) => assert_eq!(ext, "txt"),
+                err => panic!("Error::UnknownExtension was expected, got {err:?}"),
+            },
+            err => panic!("Error::LoadingConfig was expected, got {err:?}"),
+        }
     }
 }
