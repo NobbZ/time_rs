@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-use std::{fs, path::PathBuf, sync::Arc, thread::sleep, time::Duration};
+use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use clap::{Args, Subcommand};
 use gix::{
@@ -11,6 +11,8 @@ use gix::{
     NestedProgress, Progress, ThreadSafeRepository,
 };
 use prodash::{tree::Root, unit::display::Mode};
+use tokio::{fs, task, time::sleep};
+use tokio_stream::{wrappers::ReadDirStream, StreamExt};
 
 pub use self::error::Error;
 use super::{Command, Result};
@@ -40,43 +42,49 @@ pub enum RepoCommand {
 }
 
 impl Command for Repo {
-    fn run(&self, progress: Arc<Root>, args: &Cli, config: Config) -> Result<()> {
+    async fn run(&self, progress: Arc<Root>, args: &Cli, config: Config) -> Result<()> {
         match self.command {
-            RepoCommand::Init {} => self.init(config),
-            RepoCommand::Sync {} => self.sync(),
-            RepoCommand::Clone { .. } => self.clone(progress, config),
-            RepoCommand::Destroy {} => self.destroy(progress, args, config),
+            RepoCommand::Init {} => self.init(config).await,
+            RepoCommand::Sync {} => self.sync().await,
+            RepoCommand::Clone { .. } => self.clone(progress, config).await,
+            RepoCommand::Destroy {} => self.destroy(progress, args, config).await,
         }
     }
 }
 
 impl Repo {
-    fn init(&self, config: Config) -> Result<()> {
+    async fn init(&self, config: Config) -> Result<()> {
         let target_folder = config
             .data_dir
             .ok_or_else(|| Error::NoDataDir)?
             .join("repo");
 
-        fs::create_dir_all(&target_folder).map_err(Error::Io)?;
+        fs::create_dir_all(&target_folder)
+            .await
+            .map_err(Error::Io)?;
 
-        ThreadSafeRepository::init(
-            target_folder,
-            Kind::WithWorktree,
-            Options {
-                destination_must_be_empty: true,
-                ..Options::default()
-            },
-        )
+        task::spawn_blocking(|| {
+            ThreadSafeRepository::init(
+                target_folder,
+                Kind::WithWorktree,
+                Options {
+                    destination_must_be_empty: true,
+                    ..Options::default()
+                },
+            )
+        })
+        .await
+        .map_err(Error::JoinError)?
         .map_err(|e| Error::GixInit(Box::new(e)))?;
 
         Ok(())
     }
 
-    fn sync(&self) -> Result<()> {
+    async fn sync(&self) -> Result<()> {
         Ok(())
     }
 
-    fn clone(&self, progress: Arc<Root>, config: Config) -> Result<()> {
+    async fn clone(&self, progress: Arc<Root>, config: Config) -> Result<()> {
         let mode = Mode::with_throughput();
         let steps = prodash::unit::label_and_mode("steps", mode);
         let mut clone_progress = progress.add_child("clone");
@@ -94,7 +102,7 @@ impl Repo {
             gix::Url::try_from(url.as_str()).map_err(|e| Error::GixUrlParse(e, url.to_string()))?;
         clone_progress.inc();
 
-        fs::create_dir_all(&data_dir).map_err(Error::Io)?;
+        fs::create_dir_all(&data_dir).await.map_err(Error::Io)?;
         clone_progress.inc();
 
         let mut fetch = PrepareFetch::new(
@@ -122,7 +130,7 @@ impl Repo {
         Ok(())
     }
 
-    fn destroy(&self, progress: Arc<Root>, args: &Cli, config: Config) -> Result<()> {
+    async fn destroy(&self, progress: Arc<Root>, args: &Cli, config: Config) -> Result<()> {
         let mode = Mode::with_throughput().and_percentage();
         let files = prodash::unit::label_and_mode("files", mode);
 
@@ -138,36 +146,44 @@ impl Repo {
             .ok_or_else(|| Error::NoDataDir)?
             .join("repo");
 
-        remove_folder(target_folder, &mut destroy_progress)?;
+        remove_folder(target_folder, &mut destroy_progress).await?;
 
         destroy_progress.done("destroyed".into());
-        sleep(Duration::from_millis(500));
+        sleep(Duration::from_millis(500)).await;
 
         Ok(())
     }
 }
 
-fn remove_folder<P>(folder: PathBuf, progress: &mut P) -> Result<()>
+async fn remove_folder<P>(folder: PathBuf, progress: &mut P) -> Result<()>
 where
     P: NestedProgress,
     P::SubProgress: 'static,
 {
-    let files: Vec<_> = fs::read_dir(&folder).map_err(Error::Io)?.collect();
+    let read_dir = fs::read_dir(&folder).await.map_err(Error::Io)?;
+    let mut stream = ReadDirStream::new(read_dir);
+    let files = {
+        let mut vec = vec![];
+        while let Some(file) = stream.next().await {
+            vec.push(file);
+        }
+        vec
+    };
     let new_max = progress.max().unwrap_or(0) + files.len();
     progress.set_max(Some(new_max));
 
     for p in files {
         let p = p.map_err(Error::Io)?;
 
-        if p.file_type().map_err(Error::Io)?.is_dir() {
-            remove_folder(p.path(), progress)?;
+        if p.file_type().await.map_err(Error::Io)?.is_dir() {
+            Box::pin(remove_folder(p.path(), progress)).await?;
         } else {
-            fs::remove_file(p.path()).map_err(Error::Io)?;
+            fs::remove_file(p.path()).await.map_err(Error::Io)?;
             progress.inc();
         }
     }
 
-    fs::remove_dir(folder).map_err(Error::Io)?;
+    fs::remove_dir(folder).await.map_err(Error::Io)?;
     progress.inc();
 
     Ok(())
@@ -207,7 +223,8 @@ mod tests {
     }
 
     #[rstest]
-    fn clone_fails_without_data_dir(progress: Arc<Root>) {
+    #[tokio::test]
+    async fn clone_fails_without_data_dir(progress: Arc<Root>) {
         let repo = Repo {
             command: RepoCommand::Clone {
                 url: "https://github.com/NobbZ/time_rs".to_string(),
@@ -220,11 +237,15 @@ mod tests {
 
         let result = repo.run(progress, &cli_args, config);
 
-        assert!(matches!(result, Err(CommandError::Repo(Error::NoDataDir))));
+        assert!(matches!(
+            result.await,
+            Err(CommandError::Repo(Error::NoDataDir))
+        ));
     }
 
     #[rstest]
-    fn clone_fails_with_invalid_url(progress: Arc<Root>) {
+    #[tokio::test]
+    async fn clone_fails_with_invalid_url(progress: Arc<Root>) {
         let tmp = assert_fs::TempDir::new().unwrap();
 
         let repo = Repo {
@@ -239,11 +260,12 @@ mod tests {
 
         let result = repo.run(progress, &cli_args, config);
 
-        assert!(result.is_err());
+        assert!(result.await.is_err());
     }
 
     #[rstest]
-    fn clone_fails_when_destination_not_empty(progress: Arc<Root>) {
+    #[tokio::test]
+    async fn clone_fails_when_destination_not_empty(progress: Arc<Root>) {
         let tmp = assert_fs::TempDir::new().unwrap();
 
         // Create the repo directory with some content to make it non-empty
@@ -265,11 +287,12 @@ mod tests {
         let result = repo.run(progress, &cli_args, config);
 
         // Should fail because destination is not empty
-        assert!(result.is_err());
+        assert!(result.await.is_err());
     }
 
     #[rstest]
-    fn init_succeeds_with_empty_directory(progress: Arc<Root>) {
+    #[tokio::test]
+    async fn init_succeeds_with_empty_directory(progress: Arc<Root>) {
         let tmp = assert_fs::TempDir::new().unwrap();
 
         let repo = Repo {
@@ -282,12 +305,16 @@ mod tests {
 
         let result = repo.run(progress, &cli_args, config);
 
-        assert!(result.is_ok());
+        assert!(result.await.is_ok());
         assert!(tmp.child("repo").exists());
     }
 
     #[rstest]
-    fn destroy_fails_without_force_flag(destroy_repo: Repo, progress: Arc<prodash::tree::Root>) {
+    #[tokio::test]
+    async fn destroy_fails_without_force_flag(
+        destroy_repo: Repo,
+        progress: Arc<prodash::tree::Root>,
+    ) {
         let temp = assert_fs::TempDir::new().unwrap();
         let figment = Figment::new().merge(("data_dir", temp.path().to_str().unwrap()));
         let cli_args = Cli {
@@ -301,7 +328,7 @@ mod tests {
 
         let result = destroy_repo.run(progress, &cli_args, config);
 
-        let err = result.unwrap_err();
+        let err = result.await.unwrap_err();
         assert!(matches!(
             err,
             CommandError::Repo(Error::DestructiveOperation(_operation))
@@ -309,7 +336,11 @@ mod tests {
     }
 
     #[rstest]
-    fn destroy_succeeds_with_force_flag(destroy_repo: Repo, progress: Arc<prodash::tree::Root>) {
+    #[tokio::test]
+    async fn destroy_succeeds_with_force_flag(
+        destroy_repo: Repo,
+        progress: Arc<prodash::tree::Root>,
+    ) {
         let temp = assert_fs::TempDir::new().unwrap();
         // Create a repo folder with some content
         let repo_dir = temp.child("repo");
@@ -330,12 +361,13 @@ mod tests {
 
         let result = destroy_repo.run(progress, &cli_args, config);
 
-        assert!(result.is_ok());
+        assert!(result.await.is_ok());
         assert!(!repo_dir.exists());
     }
 
     #[rstest]
-    fn destroy_fails_when_repo_folder_does_not_exist(
+    #[tokio::test]
+    async fn destroy_fails_when_repo_folder_does_not_exist(
         destroy_repo: Repo,
         progress: Arc<prodash::tree::Root>,
     ) {
@@ -355,11 +387,11 @@ mod tests {
         let result = destroy_repo.run(progress, &cli_args, config);
 
         // The operation should fail because the repo folder doesn't exist
-        assert!(result.is_err());
+        assert!(result.await.is_err());
     }
 
-    #[test]
-    fn remove_folder_empty_directory() -> eyre::Result<()> {
+    #[tokio::test]
+    async fn remove_folder_empty_directory() -> eyre::Result<()> {
         let tmp = assert_fs::TempDir::new()?;
         let test_dir = tmp.child("empty_dir");
         test_dir.create_dir_all()?;
@@ -370,7 +402,7 @@ mod tests {
         let mut destroy_progress = progress.add_child("test");
         destroy_progress.init(Some(0), Some(files));
 
-        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress);
+        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress).await;
 
         assert!(result.is_ok());
         assert!(!test_dir.path().exists());
@@ -378,8 +410,8 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn remove_folder_with_files() -> eyre::Result<()> {
+    #[tokio::test]
+    async fn remove_folder_with_files() -> eyre::Result<()> {
         let tmp = assert_fs::TempDir::new()?;
         let test_dir = tmp.child("dir_with_files");
         test_dir.create_dir_all()?;
@@ -392,7 +424,7 @@ mod tests {
         let mut destroy_progress = progress.add_child("test");
         destroy_progress.init(Some(0), Some(files));
 
-        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress);
+        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress).await;
 
         assert!(result.is_ok());
         assert!(!test_dir.path().exists());
@@ -400,8 +432,8 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn remove_folder_nested_directories() -> eyre::Result<()> {
+    #[tokio::test]
+    async fn remove_folder_nested_directories() -> eyre::Result<()> {
         let tmp = assert_fs::TempDir::new()?;
         let test_dir = tmp.child("nested");
         test_dir.create_dir_all()?;
@@ -426,7 +458,7 @@ mod tests {
         let mut destroy_progress = progress.add_child("test");
         destroy_progress.init(Some(0), Some(files));
 
-        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress);
+        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress).await;
 
         assert!(result.is_ok());
         assert!(!test_dir.path().exists());
@@ -437,8 +469,8 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn remove_folder_updates_progress_correctly() -> eyre::Result<()> {
+    #[tokio::test]
+    async fn remove_folder_updates_progress_correctly() -> eyre::Result<()> {
         let tmp = assert_fs::TempDir::new()?;
         let test_dir = tmp.child("progress_test");
         test_dir.create_dir_all()?;
@@ -459,7 +491,7 @@ mod tests {
         let mut destroy_progress = progress.add_child("test");
         destroy_progress.init(Some(0), Some(files));
 
-        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress);
+        let result = remove_folder(test_dir.path().to_path_buf(), &mut destroy_progress).await;
 
         assert!(result.is_ok());
         assert!(!test_dir.path().exists());
@@ -473,7 +505,8 @@ mod tests {
     }
 
     #[rstest]
-    fn sync_succeeds(progress: Arc<Root>) {
+    #[tokio::test]
+    async fn sync_succeeds(progress: Arc<Root>) {
         let repo = Repo {
             command: RepoCommand::Sync {},
         };
@@ -484,11 +517,12 @@ mod tests {
 
         let result = repo.run(progress, &cli_args, config);
 
-        assert!(result.is_ok());
+        assert!(result.await.is_ok());
     }
 
     #[rstest]
-    fn clone_succeeds(progress: Arc<Root>) {
+    #[tokio::test]
+    async fn clone_succeeds(progress: Arc<Root>) {
         let tmp = assert_fs::TempDir::new().unwrap();
 
         let repo = Repo {
@@ -501,7 +535,7 @@ mod tests {
         let config: Config = figment.try_into().unwrap();
         let cli_args = cli_args(repo.command.clone());
 
-        let result = repo.run(progress, &cli_args, config);
+        let result = repo.run(progress, &cli_args, config).await;
 
         if let Err(e) = &result {
             eprintln!("{:?}", e);

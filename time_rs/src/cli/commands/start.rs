@@ -16,7 +16,7 @@ use super::Result;
 pub struct Start {}
 
 impl Command for Start {
-    fn run(&self, _progress: Arc<Root>, _args: &Cli, _config: Config) -> Result<()> {
+    async fn run(&self, _progress: Arc<Root>, _args: &Cli, _config: Config) -> Result<()> {
         Ok(())
     }
 }
@@ -32,8 +32,8 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn basic_operation_succeeds() -> eyre::Result<()> {
+    #[tokio::test]
+    async fn basic_operation_succeeds() -> eyre::Result<()> {
         let start = Start {};
         let figment = Figment::new().merge(("data_dir", "/"));
         let cli_args = Cli {
@@ -43,7 +43,7 @@ mod tests {
         let config = figment.try_into()?;
         let progress: Arc<_> = Options::default().create().into();
 
-        let result = start.run(progress, &cli_args, config);
+        let result = start.run(progress, &cli_args, config).await;
 
         assert!(result.is_ok());
 

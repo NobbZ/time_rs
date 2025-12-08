@@ -10,6 +10,7 @@ use gix::clone::Error as GixCloneError;
 use gix::init::Error as GixInitError;
 use gix::url::parse::Error as UrlParseError;
 use thiserror::Error as ThisError;
+use tokio::task::JoinError;
 
 #[derive(Debug, ThisError)]
 pub enum Error {
@@ -29,4 +30,6 @@ pub enum Error {
     GixUrlParse(#[source] UrlParseError, String),
     #[error("the {} operation is destructive, '--force' required", .0)]
     DestructiveOperation(String),
+    #[error("couldn't join work units")]
+    JoinError(#[source] JoinError),
 }

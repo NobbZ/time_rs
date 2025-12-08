@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+use std::future::Future;
 use std::sync::Arc;
 
 use prodash::tree::Root;
@@ -33,5 +34,10 @@ type Result<T> = std::result::Result<T, Error>;
 
 /// Common interface to run subcommands from the CLI.
 pub trait Command {
-    fn run(&self, progress_root: Arc<Root>, args: &Cli, config: Config) -> Result<()>;
+    fn run(
+        &self,
+        progress_root: Arc<Root>,
+        args: &Cli,
+        config: Config,
+    ) -> impl Future<Output = Result<()>> + Send;
 }

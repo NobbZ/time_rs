@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use figment::Error as FigmentError;
 use glob::{GlobError, PatternError};
 use thiserror::Error as ThisError;
+use tokio::task::JoinError;
 
 #[derive(Debug, ThisError)]
 pub enum Error {
@@ -24,4 +25,6 @@ pub enum Error {
     NoExtension(PathBuf),
     #[error("Unable to load the configuration")]
     LoadingConfig(#[source] Box<Error>),
+    #[error("couldn't join work units")]
+    JoinError(#[source] JoinError),
 }

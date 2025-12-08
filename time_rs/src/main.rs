@@ -80,17 +80,17 @@ fn setup_progress() -> Arc<Root> {
     progress
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     let progress = setup_progress();
-    let mut handle = prodash::render::line::render(
+    let handle = prodash::render::line::render(
         std::io::stderr(),
         Arc::downgrade(&progress),
         prodash::render::line::Options::default()
             .auto_configure(prodash::render::line::StreamKind::Stderr),
     );
-    handle.disconnect();
 
     let data_dir = match cli.data_dir {
         None => get_data_dir()?,
@@ -101,21 +101,36 @@ fn main() -> Result<()> {
         .clone()
         .map_or_else(get_config_dirs, |d| Ok(vec![d]))?;
 
-    let mut config = Config::load(config_dir)?;
+    let mut config = Config::load(config_dir).await?;
     config.add_data_dir(data_dir)?;
 
     use Commands::*;
 
-    match &cli.command {
-        Some(Repo(repo)) => repo.run(progress, &cli, config).wrap_err("repo command"),
-        Some(Start(start)) => start.run(progress, &cli, config).wrap_err("start command"),
+    let result = match &cli.command {
+        Some(Repo(repo)) => repo
+            .run(progress, &cli, config)
+            .await
+            .wrap_err("repo command"),
+        Some(Start(start)) => start
+            .run(progress, &cli, config)
+            .await
+            .wrap_err("start command"),
         Some(Status(status)) => status
             .run(progress, &cli, config)
+            .await
             .wrap_err("status command"),
-        Some(Stop(stop)) => stop.run(progress, &cli, config).wrap_err("stop command"),
+        Some(Stop(stop)) => stop
+            .run(progress, &cli, config)
+            .await
+            .wrap_err("stop command"),
         Some(Summary(summary)) => summary
             .run(progress, &cli, config)
+            .await
             .wrap_err("summary command"),
         None => todo!("We want to have a dashboard here, later…"),
-    }
+    };
+
+    handle.shutdown_and_wait();
+
+    result
 }

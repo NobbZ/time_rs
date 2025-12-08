@@ -16,7 +16,7 @@ use super::Result;
 pub struct Status {}
 
 impl Command for Status {
-    fn run(&self, _progress: Arc<Root>, _args: &Cli, _config: Config) -> Result<()> {
+    async fn run(&self, _progress: Arc<Root>, _args: &Cli, _config: Config) -> Result<()> {
         Ok(())
     }
 }
@@ -30,15 +30,15 @@ mod tests {
     use prodash::tree::Root;
     use std::sync::Arc;
 
-    #[test]
-    fn test_status_run() {
+    #[tokio::test]
+    async fn test_status_run() {
         let temp = assert_fs::TempDir::new().unwrap();
         let home_dir = temp.path().to_path_buf();
         let cli = Cli::default();
-        let config = Config::load(vec![home_dir]).unwrap();
+        let config = Config::load(vec![home_dir]).await.unwrap();
         let progress = Arc::new(Root::new());
         let status = Status {};
-        let result = status.run(Arc::clone(&progress), &cli, config);
+        let result = status.run(Arc::clone(&progress), &cli, config).await;
         assert!(result.is_ok());
     }
 }
