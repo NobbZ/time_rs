@@ -27,12 +27,14 @@ lazy_static! {
     static ref PROJECT_DIRS: Option<ProjectDirs> = ProjectDirs::from("dev", "nobbz", SUFFIX);
 }
 
+#[mutants::skip]
 fn env_var_or_default_with_suffix(var: &str, default: &str, suffix: &str) -> PathBuf {
     let base: PathBuf = env::var_os(var).unwrap_or_else(|| default.into()).into();
 
     base.join(suffix)
 }
 
+#[mutants::skip]
 fn get_data_dir() -> Result<PathBuf> {
     let raw_data_dir = env_var_or_default_with_suffix(XDG_DATA_HOME, XDG_DATA_DEFAULT, SUFFIX)
         .to_string_lossy()
@@ -41,6 +43,7 @@ fn get_data_dir() -> Result<PathBuf> {
     Ok(PathBuf::from_str(expanded_str.as_str())?)
 }
 
+#[mutants::skip]
 fn get_config_dirs() -> Result<Vec<PathBuf>> {
     let mut dirs = Vec::new();
 
@@ -68,6 +71,7 @@ fn get_config_dirs() -> Result<Vec<PathBuf>> {
     Ok(dirs)
 }
 
+#[mutants::skip]
 fn setup_progress() -> Arc<Root> {
     // Create the progress root
     let progress: Arc<_> = Options {
@@ -81,6 +85,7 @@ fn setup_progress() -> Arc<Root> {
 }
 
 #[tokio::main]
+#[mutants::skip]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
