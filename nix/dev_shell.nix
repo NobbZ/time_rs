@@ -9,6 +9,7 @@
   cargo-audit,
   cargo-deny,
   cargo-tarpaulin,
+  cargo-mutants,
   pre-commit,
   nil,
   pkg-config,
@@ -34,6 +35,7 @@ in
       cargo-audit
       cargo-deny
       cargo-tarpaulin
+      cargo-mutants
       pre-commit
       nil
       pkg-config
