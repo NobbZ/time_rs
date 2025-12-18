@@ -31,6 +31,8 @@ thiserror.workspace = true
 tokio-stream.workspace = true
 tokio.workspace = true
 
+time-rs-derive.workspace = true
+
 [dev-dependencies]
 assert_fs.workspace = true
 rstest.workspace = true
