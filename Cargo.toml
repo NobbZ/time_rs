@@ -8,3 +8,10 @@ resolver = "2"
 members = [
   "time_rs",
 ]
+
+[workspace.package]
+authors = [
+    "Norbert Melzer <nmelzer@nobbz.dev>",
+]
+license = "MIT"
+version = "0.1.0"

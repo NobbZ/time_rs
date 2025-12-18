@@ -4,10 +4,10 @@
 
 [package]
 name = "time_rs"
-version = "0.1.0"
-license = "MIT"
 edition = "2021"
-authors = ["Norbert Melzer <nmelzer@nobbz.dev>"]
+authors.workspace = true
+license.workspace = true
+version.workspace = true
 
 [[bin]]
 name = "timers"
