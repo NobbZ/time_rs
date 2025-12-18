@@ -5,12 +5,17 @@
 #![cfg(not(tarpaulin_include))]
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 
-use std::{collections::HashSet, env, path::PathBuf, str::FromStr, sync::Arc};
+use std::{
+    collections::HashSet,
+    env,
+    path::PathBuf,
+    str::FromStr,
+    sync::{Arc, LazyLock},
+};
 
 use clap::Parser;
 use color_eyre::eyre::{OptionExt, Result, WrapErr};
 use directories::ProjectDirs;
-use lazy_static::lazy_static;
 use prodash::{tree::root::Options, tree::Root};
 use time_rs::{
     cli::{commands::Command, Cli, Commands},
@@ -23,9 +28,8 @@ const XDG_DATA_DEFAULT: &str = "~/.local/share";
 
 const SUFFIX: &str = "timers";
 
-lazy_static! {
-    static ref PROJECT_DIRS: Option<ProjectDirs> = ProjectDirs::from("dev", "nobbz", SUFFIX);
-}
+static PROJECT_DIRS: LazyLock<Option<ProjectDirs>> =
+    LazyLock::new(|| ProjectDirs::from("dev", "nobbz", SUFFIX));
 
 #[mutants::skip]
 fn env_var_or_default_with_suffix(var: &str, default: &str, suffix: &str) -> PathBuf {
@@ -47,7 +51,7 @@ fn get_data_dir() -> Result<PathBuf> {
 fn get_config_dirs() -> Result<Vec<PathBuf>> {
     let mut dirs = Vec::new();
 
-    let project_dirs = PROJECT_DIRS.clone().ok_or_eyre("resolving project dirs")?;
+    let project_dirs = PROJECT_DIRS.as_ref().ok_or_eyre("resolving project dirs")?;
 
     let project_path = project_dirs.project_path();
 
