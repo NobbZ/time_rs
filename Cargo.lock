@@ -2835,6 +2835,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "time-rs-derive"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "time_rs"
 version = "0.1.0"
 dependencies = [
@@ -2853,6 +2861,7 @@ dependencies = [
  "serde",
  "shellexpand",
  "thiserror 2.0.17",
+ "time-rs-derive",
  "tokio",
  "tokio-stream",
 ]
