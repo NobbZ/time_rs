@@ -2846,7 +2846,6 @@ dependencies = [
  "figment",
  "gix",
  "glob",
- "lazy_static",
  "mutants",
  "prodash",
  "rstest",

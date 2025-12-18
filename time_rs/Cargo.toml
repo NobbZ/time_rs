@@ -23,7 +23,6 @@ eyre.workspace = true
 figment.workspace = true
 gix.workspace = true
 glob.workspace = true
-lazy_static.workspace = true
 mutants.workspace = true
 prodash.workspace = true
 serde.workspace = true
