@@ -80,3 +80,90 @@ This project uses Nix flakes for development environment management:
 - Enter the dev environment: `nix develop`
 - Format Nix files: `nix fmt`
 - Pre-commit hooks are configured - run `pre-commit run --all-files` to check all hooks
+
+## CI/CD and Workflows
+
+GitHub Actions workflows are generated from CUE definitions in `internal/ci/`:
+- Workflow definitions are in `internal/ci/*.cue` files
+- Generate workflows: `make workflows`
+- Validate workflows: `make check`
+- **Important**: Do NOT edit workflow files in `.github/workflows/` directly - they are auto-generated
+- To modify CI/CD, edit the CUE files and run `make workflows` to regenerate
+
+## Pre-commit Hooks
+
+The project uses pre-commit hooks that run automatically:
+- `cargo fmt --check` - Ensures code is formatted
+- `nix fmt -- --check` - Ensures Nix files are formatted
+- `cargo audit` - Checks for security vulnerabilities
+- `cargo deny check` - Verifies license compatibility
+- `reuse` - Validates REUSE/SPDX compliance
+- Standard checks: trailing whitespace, EOF, YAML/TOML validation, merge conflicts
+
+Run manually: `pre-commit run --all-files`
+
+## Common Tasks
+
+### Starting Development
+1. Clone the repository
+2. Enter Nix shell: `nix develop` (or use direnv with `.envrc`)
+3. Build the project: `cargo build`
+4. Run tests: `cargo nextest run`
+
+### Making Changes
+1. Make your code changes
+2. Format code: `cargo fmt`
+3. Run linter: `cargo clippy`
+4. Run tests: `cargo nextest run`
+5. Check REUSE compliance: `reuse lint`
+6. Run pre-commit hooks: `pre-commit run --all-files`
+
+### Running the CLI
+- Build and run: `cargo run -- <args>`
+- Run installed binary: `timers <args>` (note: binary name is `timers`, not `time_rs`)
+
+## Error Handling Patterns
+
+The project uses `eyre` and `color-eyre` for error handling:
+- Return `Result<T, eyre::Report>` for fallible operations
+- Use `.wrap_err("context")` or `.wrap_err_with(|| "context")` to add context
+- Chain contexts: `something().wrap_err("what failed").wrap_err("why it matters")`
+- Initialize color-eyre in main: `color_eyre::install()?`
+- Avoid panic: Use `Result` instead of `.unwrap()` or `.expect()` in production code
+
+Example:
+```rust
+use eyre::{Result, WrapErr};
+
+fn read_config() -> Result<Config> {
+    let path = config_path()
+        .wrap_err("Failed to determine config path")?;
+    
+    let contents = std::fs::read_to_string(&path)
+        .wrap_err_with(|| format!("Failed to read config from {}", path.display()))?;
+    
+    serde_json::from_str(&contents)
+        .wrap_err("Failed to parse config JSON")
+}
+```
+
+## Anti-patterns to Avoid
+
+### Do NOT:
+- Use `.unwrap()` or `.expect()` in non-test code (clippy will warn)
+- Use `dbg!()` macro in non-test code (clippy will warn)
+- Edit files in `.github/workflows/` directly (they are generated from CUE)
+- Modify generated files like `Cargo.nix` (maintained by other tools)
+- Add dependencies without running `cargo audit` and `cargo deny check`
+- Commit code without running `cargo fmt`
+- Skip REUSE/SPDX license headers on new files
+- Use bare `panic!()` - prefer returning errors
+
+### DO:
+- Add appropriate SPDX headers to all new files
+- Use `wrap_err()` to provide context for errors
+- Prefer `cargo nextest run` over `cargo test` for running tests
+- Use rstest fixtures and templates for test setup
+- Run `make workflows` after modifying CI/CD definitions
+- Check `deny.toml` before adding dependencies with unusual licenses
+- Use the provided Nix development environment for consistency
