@@ -17,6 +17,14 @@ authors = [
 license = "MIT"
 version = "0.1.0"
 
+[workspace.lints.clippy]
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+unwrap_used = "deny"
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
+
 [workspace.dependencies]
 # See https://github.com/saecki/crates.nvim/issues/56
 time-rs = { path = "./time_rs" }

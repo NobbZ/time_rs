@@ -37,7 +37,7 @@ where
     M: Message,
 {
     fn from(message: M) -> Self {
-        Envelope {
+        Self {
             message,
             meta: Metadata::default(),
         }
@@ -84,6 +84,6 @@ mod tests {
         }
         .with_metadata("meta".into(), "data".into());
 
-        assert_eq!("data", message.meta["meta"])
+        assert_eq!("data", message.meta["meta"]);
     }
 }

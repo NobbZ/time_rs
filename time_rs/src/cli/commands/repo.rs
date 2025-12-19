@@ -7,7 +7,8 @@ use std::{path::PathBuf, sync::Arc, time::Duration};
 use clap::{Args, Subcommand};
 use gix::{
     clone::PrepareFetch,
-    create::{Kind, Options},
+    create::{Kind, Options as CreateOptions},
+    open::Options as OpenOptions,
     NestedProgress, Progress, ThreadSafeRepository,
 };
 use prodash::{tree::Root, unit::display::Mode};
@@ -67,9 +68,9 @@ impl Repo {
             ThreadSafeRepository::init(
                 target_folder,
                 Kind::WithWorktree,
-                Options {
+                CreateOptions {
                     destination_must_be_empty: true,
-                    ..Options::default()
+                    ..CreateOptions::default()
                 },
             )
         })
@@ -80,6 +81,7 @@ impl Repo {
         Ok(())
     }
 
+    #[allow(clippy::unused_async)]
     async fn sync(&self) -> Result<()> {
         Ok(())
     }
@@ -109,11 +111,11 @@ impl Repo {
             gix_url,
             target_folder,
             Kind::WithWorktree,
-            Options {
+            CreateOptions {
                 destination_must_be_empty: true,
-                ..Options::default()
+                ..CreateOptions::default()
             },
-            Default::default(),
+            OpenOptions::default(),
         )
         .map_err(|e| Error::GixClone(Box::new(e)))?;
 
@@ -538,7 +540,7 @@ mod tests {
         let result = repo.run(progress, &cli_args, config).await;
 
         if let Err(e) = &result {
-            eprintln!("{:?}", e);
+            eprintln!("{e:?}");
         }
 
         assert!(result.is_ok());
