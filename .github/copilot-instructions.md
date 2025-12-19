@@ -138,10 +138,10 @@ use eyre::{Result, WrapErr};
 fn read_config() -> Result<Config> {
     let path = config_path()
         .wrap_err("Failed to determine config path")?;
-    
+
     let contents = std::fs::read_to_string(&path)
         .wrap_err_with(|| format!("Failed to read config from {}", path.display()))?;
-    
+
     serde_json::from_str(&contents)
         .wrap_err("Failed to parse config JSON")
 }
