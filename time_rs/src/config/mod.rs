@@ -38,7 +38,7 @@ impl Config {
                 .map(|p| p.join("**").join("*.*"))
                 .map(|p| {
                     p.to_str()
-                        .map(|s| s.to_string())
+                        .map(ToString::to_string)
                         .ok_or_else(|| Error::PathStringConversion(p.clone()))
                 })
                 .flat_map(|s| {
@@ -64,6 +64,7 @@ impl Config {
         .map_err(Error::JoinError)?
     }
 
+    #[allow(clippy::missing_errors_doc)]
     pub async fn load(paths: Vec<PathBuf>) -> Result<Self> {
         let figment = Self::load_figment(paths)
             .await
@@ -72,6 +73,7 @@ impl Config {
         figment.try_into()
     }
 
+    #[allow(clippy::missing_errors_doc)]
     pub fn add_data_dir<P>(&mut self, path: P) -> Result<()>
     where
         P: AsRef<Path> + Debug,
@@ -83,7 +85,7 @@ impl Config {
                 .ok_or_else(|| Error::PathStringConversion(path.as_ref().to_owned()))?,
         ));
 
-        *self = figment.clone().try_into()?;
+        *self = figment.try_into()?;
 
         Ok(())
     }
@@ -93,7 +95,7 @@ impl TryFrom<Figment> for Config {
     type Error = Error;
 
     fn try_from(figment: Figment) -> Result<Self> {
-        Ok(Config {
+        Ok(Self {
             figment: figment.clone(),
             ..figment.extract().map_err(Box::new)?
         })
@@ -115,10 +117,10 @@ mod tests {
     data_dir = "/tmp"
     "#;
 
-    const YAML: &str = r#"
+    const YAML: &str = "
     default:
       data_dir: /tmp
-    "#;
+    ";
 
     const JSON: &str = r#"
     {"default": {"data_dir": "/tmp"}}
@@ -165,6 +167,7 @@ mod tests {
 
     #[apply(the_template)]
     #[tokio::test]
+    #[allow(clippy::used_underscore_binding)]
     async fn count_metadata(
         #[case] figment_data: impl Future<Output = (TempDir, PathBuf, Figment, String)>,
         #[case] _md_name: &str,
@@ -191,6 +194,7 @@ mod tests {
 
     #[apply(the_template)]
     #[tokio::test]
+    #[allow(clippy::used_underscore_binding)]
     async fn metadata_filename(
         #[case] figment_data: impl Future<Output = (TempDir, PathBuf, Figment, String)>,
         #[case] _md_name: &str,
@@ -212,6 +216,7 @@ mod tests {
 
     #[apply(the_template)]
     #[tokio::test]
+    #[allow(clippy::used_underscore_binding)]
     async fn config_data_dir(
         #[case] figment_data: impl Future<Output = (TempDir, PathBuf, Figment, String)>,
         #[case] _md_name: &str,
@@ -225,6 +230,7 @@ mod tests {
 
     #[apply(the_template)]
     #[tokio::test]
+    #[allow(clippy::used_underscore_binding)]
     async fn load_config_data_dir(
         #[case] figment_data: impl Future<Output = (TempDir, PathBuf, Figment, String)>,
         #[case] _md_name: &str,
@@ -233,7 +239,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(Some(PathBuf::from("/tmp")), cfg.data_dir)
+        assert_eq!(Some(PathBuf::from("/tmp")), cfg.data_dir);
     }
 
     #[tokio::test]

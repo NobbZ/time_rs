@@ -61,15 +61,12 @@ fn get_config_dirs() -> Result<Vec<PathBuf>> {
     dirs.push(project_dirs.config_dir().to_owned());
 
     env::var("XDG_CONFIG_DIRS")
-        .into_iter()
-        .for_each(|xdg_dirs| {
-            xdg_dirs
-                .split(':')
-                .map(PathBuf::from)
-                .map(|d| d.join(project_path))
-                .for_each(|p| {
-                    seen.insert(p.to_owned()).then(|| dirs.push(p.to_owned()));
-                })
+        .unwrap_or_default()
+        .split(':')
+        .map(PathBuf::from)
+        .map(|d| d.join(project_path))
+        .for_each(|p| {
+            seen.insert(p.clone()).then(|| dirs.push(p.clone()));
         });
 
     Ok(dirs)
@@ -91,7 +88,10 @@ fn setup_progress() -> Arc<Root> {
 #[tokio::main]
 #[mutants::skip]
 async fn main() -> Result<()> {
+    use Commands::{Repo, Start, Status, Stop, Summary};
+
     color_eyre::install()?;
+
     let cli = Cli::parse();
 
     let progress = setup_progress();
@@ -113,8 +113,6 @@ async fn main() -> Result<()> {
 
     let mut config = Config::load(config_dir).await?;
     config.add_data_dir(data_dir)?;
-
-    use Commands::*;
 
     let result = match &cli.command {
         Some(Repo(repo)) => repo
