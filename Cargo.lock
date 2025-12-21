@@ -2843,6 +2843,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "time-rs-sourcing"
+version = "0.1.0"
+dependencies = [
+ "rstest",
+ "serde",
+ "time-rs-derive",
+]
+
+[[package]]
 name = "time_rs"
 version = "0.1.0"
 dependencies = [
