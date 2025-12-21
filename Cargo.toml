@@ -8,6 +8,7 @@ resolver = "2"
 members = [
   "time_rs",
   "time_rs_derive",
+  "time_rs_sourcing",
 ]
 
 [workspace.package]
@@ -29,6 +30,7 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
 # See https://github.com/saecki/crates.nvim/issues/56
 time-rs = { path = "./time_rs" }
 time-rs-derive = { path = "./time_rs_derive" }
+time-rs-sourcing = { path = "./time_rs_sourcing" }
 
 assert_fs = "1.1.3"
 color-eyre = "0.6.5"

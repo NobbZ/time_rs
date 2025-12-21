@@ -6,6 +6,9 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "derive")]
+pub use time_rs_derive::Message;
+
 pub trait Message {
     fn name(&self) -> &'static str;
 }

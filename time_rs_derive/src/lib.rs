@@ -14,8 +14,14 @@ pub fn derive_message(input: TokenStream) -> TokenStream {
 
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
+    #[cfg(not(feature = "internal"))]
+    let message_name = quote! { time_rs_sourcing::message::Message };
+
+    #[cfg(feature = "internal")]
+    let message_name = quote! { crate::message::Message };
+
     let quoted = quote! {
-        impl #impl_generics crate::sourcing::message::Message for #type_name #ty_generics #where_clause {
+        impl #impl_generics #message_name for #type_name #ty_generics #where_clause {
             fn name(&self) -> &'static str {
                 concat!(module_path!(), "::", stringify!(#type_name))
             }

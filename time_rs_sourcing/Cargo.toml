@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2025 Norbert Melzer <timmelzer@gmail.com>
+#
+# SPDX-License-Identifier: MIT
+
+[package]
+name = "time-rs-sourcing"
+edition = "2024"
+authors.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+serde.workspace = true
+
+[dependencies.time-rs-derive]
+path = "../time_rs_derive"
+optional = true
+
+[dev-dependencies]
+rstest.workspace = true
+
+[dev-dependencies.time-rs-derive]
+path = "../time_rs_derive"
+features = ["internal"]
+
+[lints]
+workspace = true
+
+[features]
+derive = ["dep:time-rs-derive"]
