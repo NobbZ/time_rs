@@ -91,6 +91,7 @@ fn setup_progress() -> Arc<Root> {
 #[tokio::main]
 #[mutants::skip]
 async fn main() -> Result<()> {
+    color_eyre::install()?;
     let cli = Cli::parse();
 
     let progress = setup_progress();
