@@ -22,6 +22,7 @@ use crate::{cli::Cli, config::Config};
 pub mod error;
 
 #[derive(Debug, PartialEq, Eq, Args, Clone)]
+#[allow(missing_docs)]
 pub struct Repo {
     #[command(subcommand)]
     command: RepoCommand,

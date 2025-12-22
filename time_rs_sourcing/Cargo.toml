@@ -11,6 +11,7 @@ version.workspace = true
 
 [dependencies]
 serde.workspace = true
+serde_json.workspace = true
 
 [dependencies.time-rs-derive]
 path = "../time_rs_derive"

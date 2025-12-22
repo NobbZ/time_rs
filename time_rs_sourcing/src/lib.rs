@@ -2,4 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
+//! A specialised event sourced backend that can deal with the events beeing through git
+
 pub mod message;

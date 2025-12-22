@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+//! Defines various structs and functions for parsing CLI args
+
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
@@ -10,6 +12,7 @@ pub mod commands;
 
 #[derive(Parser, Debug, Default)]
 #[command(author, version, about, long_about = None)]
+#[allow(missing_docs)]
 pub struct Cli {
     /// Basefolder to use for data, can be influenced by `XDG_DATA_HOME`.
     #[arg(long, short, global = true)]
@@ -28,6 +31,7 @@ pub struct Cli {
 }
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]
+#[allow(missing_docs)]
 pub enum Commands {
     /// Start a timer
     Start(commands::Start),

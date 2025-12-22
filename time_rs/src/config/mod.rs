@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+//! Defines how to interact with configuration
+
 use std::{
     fmt::Debug,
     path::{Path, PathBuf},
@@ -21,7 +23,9 @@ pub mod error;
 type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Deserialize)]
+/// Describes the program configuration
 pub struct Config {
+    /// The location to store the actual data
     pub data_dir: Option<PathBuf>,
 
     #[serde(skip)]
@@ -65,6 +69,7 @@ impl Config {
     }
 
     #[allow(clippy::missing_errors_doc)]
+    /// Load the configuration from the given possible paths.
     pub async fn load(paths: Vec<PathBuf>) -> Result<Self> {
         let figment = Self::load_figment(paths)
             .await
@@ -74,6 +79,7 @@ impl Config {
     }
 
     #[allow(clippy::missing_errors_doc)]
+    /// Sets the [`Self::data_dir`]
     pub fn add_data_dir<P>(&mut self, path: P) -> Result<()>
     where
         P: AsRef<Path> + Debug,

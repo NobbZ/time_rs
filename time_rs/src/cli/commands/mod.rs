@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+//! This module defines several commands that can be used from the CLI via flags.
+
 use std::future::Future;
 use std::sync::Arc;
 
@@ -25,8 +27,10 @@ pub use stop::Stop;
 pub use summary::Summary;
 
 #[derive(Debug, ThisError)]
+/// An error that signifies a failed command operation.
 pub enum Error {
     #[error("failed repo operation")]
+    /// This signifies an error during a repository operation
     Repo(#[from] RepoError),
 }
 
@@ -34,6 +38,7 @@ type Result<T> = std::result::Result<T, Error>;
 
 /// Common interface to run subcommands from the CLI.
 pub trait Command {
+    /// Runs the operation associated with the command.
     fn run(
         &self,
         progress_root: Arc<Root>,
