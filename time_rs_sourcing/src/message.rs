@@ -2,25 +2,36 @@
 //
 // SPDX-License-Identifier: MIT
 
+//! Deals with messages, which can be used as Events or Commands
+
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "derive")]
+#[doc(inline)]
 pub use time_rs_derive::Message;
 
+/// A [`Message`] is a serializable and deserializable piece of data.
+///
+/// Any message does have a name, which is used to identify its type when deserializing.
 pub trait Message {
+    /// Returns the [`Message`]s type name
     fn name(&self) -> &'static str;
 }
 
+/// Arbitrary metadata that can be attached to a message
 pub type Metadata = HashMap<String, String>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+/// An [`Envelope`] wraps the [`Message`]
 pub struct Envelope<M>
 where
     M: Message,
 {
+    /// The message itself
     pub message: M,
+    /// Associated [`Metadata`]
     pub meta: Metadata,
 }
 
@@ -29,6 +40,7 @@ where
     M: Message,
 {
     #[must_use]
+    /// Sets the given `key` to the given `value` in the [`Self::meta`]
     pub fn with_metadata(mut self, key: String, value: String) -> Self {
         self.meta.insert(key, value);
         self
@@ -64,7 +76,7 @@ mod tests {
     use rstest::rstest;
     use time_rs_derive::Message;
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Message)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Message, Serialize)]
     struct StringMessage(pub &'static str);
 
     #[rstest]

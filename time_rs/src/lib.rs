@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+//! Provides some auxiliary functionality for the CLI
+
 #![warn(clippy::unwrap_used)]
 #![warn(clippy::expect_used)]
 #![warn(clippy::dbg_macro)]

@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+//! Basic implementation of the CLI
+
 #![cfg(not(tarpaulin_include))]
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 

@@ -25,6 +25,7 @@ unwrap_used = "deny"
 
 [workspace.lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
+missing_docs = { level = "warn" }
 
 [workspace.dependencies]
 # See https://github.com/saecki/crates.nvim/issues/56
@@ -43,6 +44,7 @@ rstest = "0.26.1"
 rstest_reuse = "0.7.0"
 shellexpand = "3.1.1"
 thiserror = "2.0.17"
+serde_json = "1.0.145"
 
 [workspace.dependencies.clap]
 version = "4.5.53"

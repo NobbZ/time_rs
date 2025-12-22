@@ -13,6 +13,7 @@ use super::Command;
 use super::Result;
 
 #[derive(Debug, PartialEq, Eq, Args)]
+#[allow(missing_docs)]
 pub struct Start {}
 
 impl Command for Start {

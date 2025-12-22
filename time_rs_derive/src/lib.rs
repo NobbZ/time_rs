@@ -2,11 +2,14 @@
 //
 // SPDX-License-Identifier: MIT
 
+//! Implementation of various derive macros
+
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{DeriveInput, parse_macro_input};
 
 #[proc_macro_derive(Message)]
+/// Used to derive the implementation of [`Message`].
 pub fn derive_message(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
