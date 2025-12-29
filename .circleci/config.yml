@@ -5,6 +5,7 @@
 version: 2.1
 
 orbs:
+  node: circleci/node@7.1.0
   nix: eld/nix@1
 
 jobs:
@@ -28,6 +29,8 @@ jobs:
       - image: cimg/rust:1.90.0
     steps:
       - checkout
+      - node/install:
+          node-version: "latest"
       - nix/install:
           nix-package-url: "https://releases.nixos.org/nix/nix-2.30.0/install"
           extra-conf: |
