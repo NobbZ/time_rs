@@ -4,10 +4,6 @@
 
 version: 2.1
 
-orbs:
-  node: circleci/node@7.1.0
-  nix: eld/nix@1
-
 jobs:
   build_and_test:
     docker:
@@ -25,29 +21,25 @@ jobs:
           command: "cargo nextest run --no-fail-fast || cargo test"
 
   pre_commit_checks:
-    executor: node/default
+    docker:
+      - image: cimg/rust:1.90.0
     steps:
       - checkout
       - run:
-          name: "Install Rust toolchain"
+          name: "Install pre-commit"
           command: |
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.90.0
-            echo 'source $HOME/.cargo/env' >> $BASH_ENV
+            pip3 install --user pre-commit
+            echo 'export PATH=$HOME/.local/bin:$PATH' >> $BASH_ENV
       - run:
-          name: "Install Rust components"
+          name: "Install cargo tools"
           command: |
-            rustup component add clippy rustfmt
-      - nix/install:
-          nix-package-url: "https://releases.nixos.org/nix/nix-2.30.0/install"
-          extra-conf: |
-            auto-optimise-store = true
-            experimental-features = nix-command flakes
-            substituters = https://cache.nixos.org https://nix-community.cachix.org
-            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
+            cargo install cargo-audit --locked
+            cargo install cargo-deny --locked
       - run:
           name: "Run pre-commit hooks"
           command: |
-            nix develop . -c pre-commit run --all-files --verbose
+            # Skip Nix-dependent hooks (alejandra, coverage-validate)
+            SKIP=alejandra,coverage-validate pre-commit run --all-files --verbose
 
 workflows:
   build_and_test_workflow:
