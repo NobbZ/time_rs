@@ -26,13 +26,11 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Install Nix"
+          name: "Install and Configure Nix"
           command: |
             sh <(curl -L https://releases.nixos.org/nix/nix-2.30.0/install) --no-daemon
             echo 'source /home/circleci/.nix-profile/etc/profile.d/nix.sh' >> $BASH_ENV
-      - run:
-          name: "Configure Nix"
-          command: |
+            source /home/circleci/.nix-profile/etc/profile.d/nix.sh
             mkdir -p ~/.config/nix
             cat > ~/.config/nix/nix.conf \<<EOF
             auto-optimise-store = true
@@ -47,7 +45,6 @@ jobs:
       - run:
           name: "Run pre-commit hooks"
           command: |
-            source /home/circleci/.nix-profile/etc/profile.d/nix.sh
             nix develop . -c pre-commit run --all-files --verbose
 
 workflows:
