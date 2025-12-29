@@ -34,7 +34,7 @@ jobs:
           name: "Configure Nix"
           command: |
             mkdir -p ~/.config/nix
-            cat > ~/.config/nix/nix.conf <<EOF
+            cat > ~/.config/nix/nix.conf \<<EOF
             auto-optimise-store = true
             experimental-features = nix-command flakes
             substituters = https://cache.nixos.org https://nix-community.cachix.org
