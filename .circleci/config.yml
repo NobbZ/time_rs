@@ -29,8 +29,7 @@ jobs:
       - image: cimg/rust:1.90.0
     steps:
       - checkout
-      - node/install:
-          node-version: "latest"
+      - node/install
       - nix/install:
           nix-package-url: "https://releases.nixos.org/nix/nix-2.30.0/install"
           extra-conf: |
