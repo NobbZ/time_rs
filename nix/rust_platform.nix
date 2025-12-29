@@ -10,11 +10,12 @@
 
   # rust = rust-bin.nightly."2025-12-01".default;
   # rust-analyzer = rust-bin.nightly."2025-12-01".rust-analyzer;
+  rustfmt = rust-bin.nightly.latest.rustfmt;
 
   rustc = rust;
   cargo = rust;
 in {
-  inherit rust rustc cargo rust-analyzer;
+  inherit rust rustc cargo rust-analyzer rustfmt;
   rustPlatform = makeRustPlatform {
     inherit rustc cargo;
   };

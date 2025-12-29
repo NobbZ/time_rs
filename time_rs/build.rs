@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2023 Norbert Melzer <timmelzer@gmail.com>
+//
+// SPDX-License-Identifier: MIT
+
 #![allow(missing_docs)]
 
 use std::env;

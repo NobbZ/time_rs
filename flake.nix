@@ -39,7 +39,7 @@
         };
 
         devShells.default = pkgs.callPackage ./nix/dev_shell.nix {
-          inherit (rustTooling) rust rust-analyzer;
+          inherit (rustTooling) rust rust-analyzer rustfmt;
           inherit (pkgs) nil;
         };
       };

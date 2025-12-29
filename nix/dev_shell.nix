@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 {
   mkShell,
+  lib,
   rust,
   rust-analyzer,
   cargo-nextest,
@@ -16,6 +17,7 @@
   openssl,
   bacon,
   cue,
+  rustfmt,
 }: let
   rustWithExtensions = rust.override {
     extensions = [
@@ -24,10 +26,21 @@
   };
 in
   mkShell {
-    name = "timeRS-dev-shell";
-    version = "0.0.0";
+    name = lib.pipe ../time_rs/Cargo.toml [
+      builtins.readFile
+      builtins.fromTOML
+      (p: p.package.name)
+      (n: "${n}-dev-shell")
+    ];
+    version = lib.pipe ../Cargo.toml [
+      builtins.readFile
+      builtins.fromTOML
+      (ws: ws.workspace.package.version)
+      (v: "${v}-dev")
+    ];
 
     packages = [
+      rustfmt
       rustWithExtensions
       bacon
       rust-analyzer
