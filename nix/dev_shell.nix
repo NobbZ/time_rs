@@ -42,4 +42,8 @@ in
       openssl
       cue
     ];
+
+    shellHook = ''
+      export SOURCE_DATE_EPOCH=365515200
+    '';
   }

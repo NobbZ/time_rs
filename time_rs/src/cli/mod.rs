@@ -6,12 +6,20 @@
 
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{crate_version, Parser, Subcommand};
 
 pub mod commands;
 
+const VERSION: &str = crate_version!();
+const BUILD_DATE: &str = env!("BUILD_DATE");
+const RUST_VERSION: &str = env!("RUST_VERSION");
+
+fn long_version() -> String {
+    format!("{VERSION} ({BUILD_DATE})\nbuilt using rustc {RUST_VERSION}")
+}
+
 #[derive(Parser, Debug, Default)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version = long_version(), long_version = long_version(), about, long_about = None)]
 #[allow(missing_docs)]
 pub struct Cli {
     /// Basefolder to use for data, can be influenced by `XDG_DATA_HOME`.

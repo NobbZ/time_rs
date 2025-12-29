@@ -8,6 +8,9 @@
   rust = rust-bin.stable."1.90.0".default;
   rust-analyzer = rust-bin.stable."1.90.0".rust-analyzer;
 
+  # rust = rust-bin.nightly."2025-12-01".default;
+  # rust-analyzer = rust-bin.nightly."2025-12-01".rust-analyzer;
+
   rustc = rust;
   cargo = rust;
 in {

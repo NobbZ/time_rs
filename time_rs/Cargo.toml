@@ -18,6 +18,10 @@ path = "src/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[build-dependencies]
+chrono.workspace = true
+rustc_version.workspace = true
+
 [dependencies]
 clap.workspace = true
 color-eyre.workspace = true
