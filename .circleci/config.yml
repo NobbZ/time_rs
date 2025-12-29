@@ -29,8 +29,8 @@ jobs:
     steps:
       - checkout
       - nix/install:
-          nix_version: "2.30.0"
-          extra_nix_config: |
+          nix-package-url: "https://releases.nixos.org/nix/nix-2.30.0/install"
+          extra-conf: |
             auto-optimise-store = true
             experimental-features = nix-command flakes
             substituters = https://cache.nixos.org https://nix-community.cachix.org
