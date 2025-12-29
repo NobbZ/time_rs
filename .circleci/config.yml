@@ -25,11 +25,18 @@ jobs:
           command: "cargo nextest run --no-fail-fast || cargo test"
 
   pre_commit_checks:
-    docker:
-      - image: cimg/rust:1.90.0
+    executor: node/default
     steps:
       - checkout
-      - node/install
+      - run:
+          name: "Install Rust toolchain"
+          command: |
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.90.0
+            echo 'source $HOME/.cargo/env' >> $BASH_ENV
+      - run:
+          name: "Install Rust components"
+          command: |
+            rustup component add clippy rustfmt
       - nix/install:
           nix-package-url: "https://releases.nixos.org/nix/nix-2.30.0/install"
           extra-conf: |
@@ -37,10 +44,6 @@ jobs:
             experimental-features = nix-command flakes
             substituters = https://cache.nixos.org https://nix-community.cachix.org
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
-      - run:
-          name: "Install Rust components"
-          command: |
-            rustup component add clippy rustfmt
       - run:
           name: "Run pre-commit hooks"
           command: |
