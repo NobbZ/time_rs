@@ -20,7 +20,38 @@ jobs:
           name: "Run tests"
           command: "cargo nextest run --no-fail-fast || cargo test"
 
+  pre_commit_checks:
+    docker:
+      - image: cimg/rust:1.90.0
+    steps:
+      - checkout
+      - run:
+          name: "Install Nix"
+          command: |
+            sh <(curl -L https://releases.nixos.org/nix/nix-2.30.0/install) --no-daemon
+            echo 'source /home/circleci/.nix-profile/etc/profile.d/nix.sh' >> $BASH_ENV
+      - run:
+          name: "Configure Nix"
+          command: |
+            mkdir -p ~/.config/nix
+            cat > ~/.config/nix/nix.conf <<EOF
+            auto-optimise-store = true
+            experimental-features = nix-command flakes
+            substituters = https://cache.nixos.org https://nix-community.cachix.org
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
+            EOF
+      - run:
+          name: "Install Rust components"
+          command: |
+            rustup component add clippy rustfmt
+      - run:
+          name: "Run pre-commit hooks"
+          command: |
+            source /home/circleci/.nix-profile/etc/profile.d/nix.sh
+            nix develop . -c pre-commit run --all-files --verbose
+
 workflows:
   build_and_test_workflow:
     jobs:
       - build_and_test
+      - pre_commit_checks
