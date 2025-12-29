@@ -11,6 +11,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: "Install cargo-nextest"
+          command: "cargo install cargo-nextest --locked"
+      - run:
           name: "Build all targets"
           command: "cargo build --all-targets"
       - run:
