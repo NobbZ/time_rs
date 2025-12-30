@@ -39,5 +39,17 @@ fn main() {
         |v| v.to_string(),
     );
 
+    let llvm = rustc_version::version_meta().map_or_else(
+        |e| {
+            println!("cargo::warning=rustc metadata problem: {e:?}");
+            "unknown".to_string()
+        },
+        |meta| {
+            meta.llvm_version
+                .map_or_else(|| "unknown".to_string(), |v| v.to_string())
+        },
+    );
+
     println!("cargo:rustc-env=RUST_VERSION={rustc}");
+    println!("cargo:rustc-env=LLVM_VERSION={llvm}");
 }

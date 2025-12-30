@@ -32,6 +32,7 @@ in
       (p: p.package.name)
       (n: "${n}-dev-shell")
     ];
+
     version = lib.pipe ../Cargo.toml [
       builtins.readFile
       builtins.fromTOML

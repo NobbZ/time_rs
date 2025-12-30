@@ -13,9 +13,10 @@ pub mod commands;
 const VERSION: &str = crate_version!();
 const BUILD_DATE: &str = env!("BUILD_DATE");
 const RUST_VERSION: &str = env!("RUST_VERSION");
+const LLVM_VERSION: &str = env!("LLVM_VERSION");
 
 fn long_version() -> String {
-    format!("{VERSION} ({BUILD_DATE})\nbuilt using rustc {RUST_VERSION}")
+    format!("{VERSION} (from {BUILD_DATE})\nbuilt using rustc {RUST_VERSION} (LLVM {LLVM_VERSION})")
 }
 
 #[derive(Parser, Debug, Default)]
