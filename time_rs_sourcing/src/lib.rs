@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-//! A specialised event sourced backend that can deal with the events beeing through git
+//! A specialised event sourced backend that can deal with the events being through git
 //!
 //! This crate provides a fully-fledged event sourcing system that uses git (via gix) as an event store.
 //! Each event is stored in its own file, with exactly one file per commit.

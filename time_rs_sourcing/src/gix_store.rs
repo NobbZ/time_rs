@@ -214,6 +214,8 @@ impl EventStore for GixEventStore {
                 // For each commit, we should only have one event file (the new one)
                 // To find which file is new in this commit, we need to compare with parent
                 // For simplicity, we'll just take the most recent file by filename
+                // Note: This assumes filenames are timestamped and monotonically increasing.
+                // In practice, the git commit order is the authoritative event order.
                 let mut max_file: Option<(String, E, EventMetadata)> = None;
 
                 for entry in subtree.iter() {
@@ -235,7 +237,13 @@ impl EventStore for GixEventStore {
                         })?;
 
                         if let Ok(event) = serde_json::from_str::<E>(content) {
-                            let file_path = format!("events/{}", entry.filename().to_str().unwrap_or("unknown"));
+                            // Get filename as UTF-8 string, skip if invalid
+                            let Ok(filename_str) = entry.filename().to_str() else {
+                                continue;
+                            };
+                            
+                            let file_path = format!("events/{filename_str}");
+
 
                             let metadata = EventMetadata {
                                 commit_id: commit.id.to_string(),
@@ -270,8 +278,10 @@ impl EventStore for GixEventStore {
     }
 
     fn read_from<E: Event>(&self, _commit_id: &str) -> Result<Vec<StoredEvent<E>>> {
-        // For now, implement a simple version that reads all events
+        // TODO: Implement efficient reading from a specific commit
+        // For now, reading all events is the implemented behavior
         // A more efficient implementation would start from the given commit
+        // and only read newer events
         self.read_all()
     }
 
@@ -379,6 +389,8 @@ mod tests {
     fn one_file_per_commit() {
         use std::process::Command;
         
+        const GIT_COMMIT_HASH_LENGTH: usize = 40;
+        
         let temp_dir = assert_fs::TempDir::new().unwrap();
         let mut store = GixEventStore::init(temp_dir.path()).unwrap();
 
@@ -406,7 +418,7 @@ mod tests {
         let mut i = 0;
         let mut commit_count = 0;
         while i < lines.len() {
-            if lines[i].len() == 40 {
+            if lines[i].len() == GIT_COMMIT_HASH_LENGTH {
                 // This is a commit hash
                 commit_count += 1;
                 i += 1;
@@ -417,7 +429,7 @@ mod tests {
                 
                 // Count files for this commit
                 let mut file_count = 0;
-                while i < lines.len() && !lines[i].is_empty() && lines[i].len() != 40 {
+                while i < lines.len() && !lines[i].is_empty() && lines[i].len() != GIT_COMMIT_HASH_LENGTH {
                     if lines[i].starts_with("events/") {
                         file_count += 1;
                     }
