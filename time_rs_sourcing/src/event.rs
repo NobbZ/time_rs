@@ -57,7 +57,7 @@ where
         }
 
         let helper = StoredEventHelper::<E>::deserialize(deserializer)?;
-        Ok(StoredEvent {
+        Ok(Self {
             event: helper.event,
             metadata: helper.metadata,
         })

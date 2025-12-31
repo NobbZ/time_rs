@@ -65,7 +65,7 @@ impl GixEventStore {
         })
     }
 
-    fn generate_event_filename(&self, event_type: &str) -> String {
+    fn generate_event_filename(event_type: &str) -> String {
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .expect("System time before UNIX epoch")
@@ -145,7 +145,7 @@ impl EventStore for GixEventStore {
         let json = serde_json::to_string_pretty(event)?;
 
         // Generate a unique filename for this event
-        let filename = self.generate_event_filename(event.name());
+        let filename = Self::generate_event_filename(event.name());
         let event_path = self.events_dir.join(&filename);
         let relative_path = PathBuf::from("events").join(&filename);
 
@@ -186,11 +186,11 @@ impl EventStore for GixEventStore {
 
             // Get the message to see if this is an event commit
             let message = commit.message().ok().map(|m| m.title.to_string());
-            if let Some(msg) = message {
-                if !msg.starts_with("Add event:") {
-                    // Skip non-event commits
-                    continue;
-                }
+            if let Some(msg) = message
+                && !msg.starts_with("Add event:")
+            {
+                // Skip non-event commits
+                continue;
             }
 
             let tree = commit
@@ -199,66 +199,65 @@ impl EventStore for GixEventStore {
 
             // Find files in the events directory
             let events_path = gix::path::from_bstr(b"events".as_bstr());
-            if let Ok(entry) = tree.lookup_entry_by_path(&events_path) {
-                if let Some(entry) = entry {
-                    if entry.mode().is_tree() {
-                        let events_tree = entry
+            if let Ok(entry) = tree.lookup_entry_by_path(&events_path)
+                && let Some(entry) = entry
+                && entry.mode().is_tree()
+            {
+                let events_tree = entry
+                    .object()
+                    .map_err(|e| EventSourcingError::GitError(e.to_string()))?;
+
+                let subtree = events_tree
+                    .try_into_tree()
+                    .map_err(|_| EventSourcingError::GitError("Not a tree".to_string()))?;
+
+                // For each commit, we should only have one event file (the new one)
+                // To find which file is new in this commit, we need to compare with parent
+                // For simplicity, we'll just take the most recent file by filename
+                let mut max_file: Option<(String, E, EventMetadata)> = None;
+
+                for entry in subtree.iter() {
+                    let entry = entry
+                        .map_err(|e| EventSourcingError::GitError(e.to_string()))?;
+
+                    if entry.mode().is_blob() {
+                        let filename = entry.filename().to_string();
+                        let blob = entry
                             .object()
                             .map_err(|e| EventSourcingError::GitError(e.to_string()))?;
 
-                        let subtree = events_tree
-                            .try_into_tree()
-                            .map_err(|_| EventSourcingError::GitError("Not a tree".to_string()))?;
+                        let blob_obj = blob.try_into_blob().map_err(|_| {
+                            EventSourcingError::GitError("Not a blob".to_string())
+                        })?;
 
-                        // For each commit, we should only have one event file (the new one)
-                        // To find which file is new in this commit, we need to compare with parent
-                        // For simplicity, we'll just take the most recent file by filename
-                        let mut max_file: Option<(String, E, EventMetadata)> = None;
+                        let content = blob_obj.data.to_str().map_err(|_| {
+                            EventSourcingError::GitError("Invalid UTF-8 in file".to_string())
+                        })?;
 
-                        for entry in subtree.iter() {
-                            let entry = entry
-                                .map_err(|e| EventSourcingError::GitError(e.to_string()))?;
+                        if let Ok(event) = serde_json::from_str::<E>(content) {
+                            let file_path = format!("events/{}", entry.filename().to_str().unwrap_or("unknown"));
 
-                            if entry.mode().is_blob() {
-                                let filename = entry.filename().to_string();
-                                let blob = entry
-                                    .object()
-                                    .map_err(|e| EventSourcingError::GitError(e.to_string()))?;
+                            let metadata = EventMetadata {
+                                commit_id: commit.id.to_string(),
+                                timestamp: commit.time().ok().map_or(0, |t| t.seconds),
+                                author: commit
+                                    .author()
+                                    .ok()
+                                    .map_or_else(|| "unknown".to_string(), |a| a.name.to_string()),
+                                file_path,
+                            };
 
-                                let blob_obj = blob.try_into_blob().map_err(|_| {
-                                    EventSourcingError::GitError("Not a blob".to_string())
-                                })?;
-
-                                let content = blob_obj.data.to_str().map_err(|_| {
-                                    EventSourcingError::GitError("Invalid UTF-8 in file".to_string())
-                                })?;
-
-                                if let Ok(event) = serde_json::from_str::<E>(content) {
-                                    let file_path = format!("events/{}", entry.filename().to_str().unwrap_or("unknown"));
-
-                                    let metadata = EventMetadata {
-                                        commit_id: commit.id.to_string(),
-                                        timestamp: commit.time().ok().map_or(0, |t| t.seconds),
-                                        author: commit
-                                            .author()
-                                            .ok()
-                                            .map_or("unknown".to_string(), |a| a.name.to_string()),
-                                        file_path,
-                                    };
-
-                                    // Keep track of the file with the largest filename (most recent by timestamp)
-                                    if max_file.as_ref().map_or(true, |(f, _, _)| filename > *f) {
-                                        max_file = Some((filename, event, metadata));
-                                    }
-                                }
+                            // Keep track of the file with the largest filename (most recent by timestamp)
+                            if max_file.as_ref().is_none_or(|(f, _, _)| filename > *f) {
+                                max_file = Some((filename, event, metadata));
                             }
                         }
-
-                        // Add only the most recent event from this commit
-                        if let Some((_, event, metadata)) = max_file {
-                            commit_events.push(StoredEvent { event, metadata });
-                        }
                     }
+                }
+
+                // Add only the most recent event from this commit
+                if let Some((_, event, metadata)) = max_file {
+                    commit_events.push(StoredEvent { event, metadata });
                 }
             }
         }
@@ -374,5 +373,66 @@ mod tests {
         assert!(metadata.timestamp > 0);
         assert!(!metadata.author.is_empty());
         assert!(metadata.file_path.starts_with("events/"));
+    }
+
+    #[rstest]
+    fn one_file_per_commit() {
+        use std::process::Command;
+        
+        let temp_dir = assert_fs::TempDir::new().unwrap();
+        let mut store = GixEventStore::init(temp_dir.path()).unwrap();
+
+        // Add multiple events
+        for i in 0..3 {
+            let event = TestEvent {
+                data: format!("event {i}"),
+            };
+            store.append(&event).unwrap();
+        }
+
+        // Check each commit has exactly one file
+        let output = Command::new("git")
+            .arg("log")
+            .arg("--pretty=format:%H")
+            .arg("--name-only")
+            .current_dir(temp_dir.path())
+            .output()
+            .unwrap();
+
+        let log = String::from_utf8_lossy(&output.stdout);
+        let lines: Vec<&str> = log.lines().collect();
+
+        // Count files per commit (format is: commit_hash, blank line, file1, file2, ..., blank line, next commit)
+        let mut i = 0;
+        let mut commit_count = 0;
+        while i < lines.len() {
+            if lines[i].len() == 40 {
+                // This is a commit hash
+                commit_count += 1;
+                i += 1;
+                
+                if i < lines.len() && lines[i].is_empty() {
+                    i += 1; // Skip blank line
+                }
+                
+                // Count files for this commit
+                let mut file_count = 0;
+                while i < lines.len() && !lines[i].is_empty() && lines[i].len() != 40 {
+                    if lines[i].starts_with("events/") {
+                        file_count += 1;
+                    }
+                    i += 1;
+                }
+                
+                // Each event commit should have exactly one file
+                if file_count > 0 {
+                    assert_eq!(file_count, 1, "Commit should have exactly one file");
+                }
+            } else {
+                i += 1;
+            }
+        }
+        
+        assert!(commit_count >= 3, "Should have at least 3 event commits");
     }
 }
