@@ -15,7 +15,23 @@ use crate::store::EventStore;
 
 /// A git-based event store that uses gix for git operations
 ///
-/// Each event is stored as a JSON file in the repository with exactly one file per commit
+/// Each event is stored as a JSON file in the repository with exactly one file per commit.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use time_rs_sourcing::{GixEventStore, EventStore};
+///
+/// // Initialize a new event store
+/// let mut store = GixEventStore::init("./my-events").unwrap();
+///
+/// // Append an event
+/// let commit_id = store.append(&my_event).unwrap();
+/// println!("Event stored in commit: {}", commit_id);
+///
+/// // Read all events
+/// let events = store.read_all::<MyEvent>().unwrap();
+/// ```
 pub struct GixEventStore {
     repo: gix::Repository,
     work_dir: PathBuf,
@@ -24,6 +40,14 @@ pub struct GixEventStore {
 
 impl GixEventStore {
     /// Create a new event store from an existing git repository
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// use time_rs_sourcing::GixEventStore;
+    ///
+    /// let store = GixEventStore::open("./existing-repo").unwrap();
+    /// ```
     ///
     /// # Errors
     ///
@@ -44,6 +68,14 @@ impl GixEventStore {
     }
 
     /// Initialize a new git repository for event storage
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// use time_rs_sourcing::GixEventStore;
+    ///
+    /// let store = GixEventStore::init("./new-events").unwrap();
+    /// ```
     ///
     /// # Errors
     ///

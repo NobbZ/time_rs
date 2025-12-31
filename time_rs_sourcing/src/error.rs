@@ -41,3 +41,58 @@ pub enum EventSourcingError {
 
 /// Result type for event sourcing operations
 pub type Result<T> = std::result::Result<T, EventSourcingError>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_git_error_display() {
+        let error = EventSourcingError::GitError("test error".to_string());
+        assert_eq!(error.to_string(), "Git operation failed: test error");
+    }
+
+    #[test]
+    fn test_serialization_error_conversion() {
+        let json_error = serde_json::from_str::<i32>("invalid json").unwrap_err();
+        let error: EventSourcingError = json_error.into();
+        assert!(matches!(error, EventSourcingError::SerializationError(_)));
+    }
+
+    #[test]
+    fn test_event_not_found_display() {
+        let error = EventSourcingError::EventNotFound("event-123".to_string());
+        assert_eq!(error.to_string(), "Event not found: event-123");
+    }
+
+    #[test]
+    fn test_repository_error_display() {
+        let error = EventSourcingError::RepositoryError("invalid repo".to_string());
+        assert_eq!(error.to_string(), "Repository error: invalid repo");
+    }
+
+    #[test]
+    fn test_io_error_conversion() {
+        let io_error = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
+        let error: EventSourcingError = io_error.into();
+        assert!(matches!(error, EventSourcingError::IoError(_)));
+    }
+
+    #[test]
+    fn test_multiple_files_in_commit_display() {
+        let error = EventSourcingError::MultipleFilesInCommit {
+            commit: "abc123".to_string(),
+            count: 3,
+        };
+        assert_eq!(
+            error.to_string(),
+            "Multiple files in commit abc123: expected 1 file, found 3"
+        );
+    }
+
+    #[test]
+    fn test_error_is_send_and_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<EventSourcingError>();
+    }
+}

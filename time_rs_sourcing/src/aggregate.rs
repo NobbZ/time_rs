@@ -9,7 +9,52 @@ use crate::event::Event;
 
 /// An aggregate is a stateful entity that can be reconstructed from events
 ///
-/// Aggregates process events to build up their state through event replay
+/// Aggregates process events to build up their state through event replay.
+///
+/// # Example
+///
+/// ```
+/// use time_rs_sourcing::{Aggregate, Result};
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// enum CounterEvent {
+///     Incremented,
+///     Decremented,
+/// }
+///
+/// impl time_rs_sourcing::message::Message for CounterEvent {
+///     fn name(&self) -> &'static str {
+///         "CounterEvent"
+///     }
+/// }
+///
+/// #[derive(Debug, Default)]
+/// struct Counter {
+///     count: i32,
+/// }
+///
+/// impl Aggregate for Counter {
+///     type Event = CounterEvent;
+///
+///     fn apply(&mut self, event: &Self::Event) -> Result<()> {
+///         match event {
+///             CounterEvent::Incremented => self.count += 1,
+///             CounterEvent::Decremented => self.count -= 1,
+///         }
+///         Ok(())
+///     }
+/// }
+///
+/// // Replay events to rebuild state
+/// let events = vec![
+///     CounterEvent::Incremented,
+///     CounterEvent::Incremented,
+///     CounterEvent::Decremented,
+/// ];
+/// let counter = Counter::replay(events).unwrap();
+/// assert_eq!(counter.count, 1);
+/// ```
 pub trait Aggregate: Sized + Default {
     /// The type of events this aggregate processes
     type Event: Event;

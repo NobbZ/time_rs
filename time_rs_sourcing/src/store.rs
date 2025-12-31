@@ -9,7 +9,25 @@ use crate::event::{Event, StoredEvent};
 
 /// A store for reading and writing events
 ///
-/// The event store is responsible for persisting events and retrieving them in order
+/// The event store is responsible for persisting events and retrieving them in order.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use time_rs_sourcing::{EventStore, GixEventStore};
+///
+/// // Initialize a new event store
+/// let mut store = GixEventStore::init("./events").unwrap();
+///
+/// // Append an event
+/// let commit_id = store.append(&my_event).unwrap();
+///
+/// // Read all events
+/// let events = store.read_all::<MyEvent>().unwrap();
+///
+/// // Get latest commit
+/// let latest = store.latest_commit().unwrap();
+/// ```
 pub trait EventStore {
     /// Append a new event to the store
     ///
