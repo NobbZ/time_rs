@@ -13,20 +13,37 @@ use crate::event::{Event, StoredEvent};
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// <!-- This example uses no_run because it requires filesystem operations -->
+/// ```no_run
 /// use time_rs_sourcing::{EventStore, GixEventStore};
+/// use serde::{Serialize, Deserialize};
 ///
+/// #[derive(Debug, Clone, Serialize, Deserialize)]
+/// enum MyEvent {
+///     Created,
+/// }
+///
+/// impl time_rs_sourcing::message::Message for MyEvent {
+///     fn name(&self) -> &'static str {
+///         "MyEvent"
+///     }
+/// }
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// // Initialize a new event store
-/// let mut store = GixEventStore::init("./events").unwrap();
+/// let mut store = GixEventStore::init("./events")?;
 ///
 /// // Append an event
-/// let commit_id = store.append(&my_event).unwrap();
+/// let my_event = MyEvent::Created;
+/// let commit_id = store.append(&my_event)?;
 ///
 /// // Read all events
-/// let events = store.read_all::<MyEvent>().unwrap();
+/// let events = store.read_all::<MyEvent>()?;
 ///
 /// // Get latest commit
-/// let latest = store.latest_commit().unwrap();
+/// let latest = store.latest_commit()?;
+/// # Ok(())
+/// # }
 /// ```
 pub trait EventStore {
     /// Append a new event to the store

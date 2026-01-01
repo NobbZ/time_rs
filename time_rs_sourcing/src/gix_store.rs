@@ -19,18 +19,35 @@ use crate::store::EventStore;
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// <!-- This example uses no_run because it requires filesystem operations -->
+/// ```no_run
 /// use time_rs_sourcing::{GixEventStore, EventStore};
+/// use serde::{Serialize, Deserialize};
 ///
+/// #[derive(Debug, Clone, Serialize, Deserialize)]
+/// enum MyEvent {
+///     Created,
+/// }
+///
+/// impl time_rs_sourcing::message::Message for MyEvent {
+///     fn name(&self) -> &'static str {
+///         "MyEvent"
+///     }
+/// }
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// // Initialize a new event store
-/// let mut store = GixEventStore::init("./my-events").unwrap();
+/// let mut store = GixEventStore::init("./my-events")?;
 ///
 /// // Append an event
-/// let commit_id = store.append(&my_event).unwrap();
+/// let my_event = MyEvent::Created;
+/// let commit_id = store.append(&my_event)?;
 /// println!("Event stored in commit: {}", commit_id);
 ///
 /// // Read all events
-/// let events = store.read_all::<MyEvent>().unwrap();
+/// let events = store.read_all::<MyEvent>()?;
+/// # Ok(())
+/// # }
 /// ```
 pub struct GixEventStore {
     repo: gix::Repository,
@@ -43,10 +60,14 @@ impl GixEventStore {
     ///
     /// # Example
     ///
-    /// ```rust,ignore
+    /// <!-- This example uses no_run because it requires filesystem operations -->
+    /// ```no_run
     /// use time_rs_sourcing::GixEventStore;
     ///
-    /// let store = GixEventStore::open("./existing-repo").unwrap();
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let store = GixEventStore::open("./existing-repo")?;
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// # Errors
@@ -71,10 +92,14 @@ impl GixEventStore {
     ///
     /// # Example
     ///
-    /// ```rust,ignore
+    /// <!-- This example uses no_run because it requires filesystem operations -->
+    /// ```no_run
     /// use time_rs_sourcing::GixEventStore;
     ///
-    /// let store = GixEventStore::init("./new-events").unwrap();
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let store = GixEventStore::init("./new-events")?;
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// # Errors
